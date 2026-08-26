@@ -1,0 +1,13 @@
+{
+  "name": "bx-sites",
+  "description": "Skills for maintaining bx-sites workflows and CI through GitHub Actions.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Ortus Solutions",
+    "url": "https://ortussolutions.com"
+  },
+  "homepage": "https://github.com/ortus-boxlang/bx-sites",
+  "repository": "https://github.com/ortus-boxlang/bx-sites-skills",
+  "license": "MIT",
+  "mcpServers": {}
+}

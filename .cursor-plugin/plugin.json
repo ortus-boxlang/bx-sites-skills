@@ -1,0 +1,14 @@
+{
+  "name": "bx-sites",
+  "displayName": "bx-sites",
+  "description": "Operate and troubleshoot bx-sites GitHub Actions workflows.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Ortus Solutions",
+    "url": "https://ortussolutions.com"
+  },
+  "homepage": "https://github.com/ortus-boxlang/bx-sites",
+  "repository": "https://github.com/ortus-boxlang/bx-sites-skills",
+  "license": "MIT",
+  "keywords": ["boxlang", "bx-sites", "github-actions", "ci", "release"]
+}

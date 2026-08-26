@@ -1,0 +1,13 @@
+{
+  "name": "bx-sites-skills",
+  "owner": {
+    "name": "Ortus Solutions",
+    "email": "info@ortussolutions.com"
+  },
+  "plugins": [
+    {
+      "name": "bx-sites",
+      "source": "./"
+    }
+  ]
+}
