@@ -1,7 +1,15 @@
-# Search Providers Reference
+---
+name: bx-sites-search
+metadata:
+  version: "1.0"
+description: Configure and troubleshoot search in a bx-sites (ortus-boxlang/bx-sites) site - the default local static/client-side provider (MiniSearch, search-index.json, Cmd/Ctrl+K palette), Algolia DocSearch, Pagefind, and wiring up a fully custom provider (e.g. Meilisearch) via a theme override. Use this whenever a user wants to turn search on/off, switch providers, or debug why search results look wrong.
+---
 
-`search: true`/`false` is the master on/off switch regardless of which
-`searchProvider.provider` is active.
+# BxSites Search Providers Reference
+
+`search: true`/`false` (in `bxsites.yaml` - see `bx-sites-configuration`) is
+the master on/off switch regardless of which `searchProvider.provider` is
+active.
 
 ## `local` (default)
 
@@ -20,7 +28,9 @@ command-palette overlay (reuses the same MiniSearch index, `local` only);
 ```bash
 bxSites search-index
 ```
-rebuilds just the index (`build` already runs this; useful standalone).
+rebuilds just the index (`build` already runs this; useful standalone - see
+`bx-sites-build`). `bxSites search:query --query="..."` (see
+`bx-sites-content-quality`) sanity-checks what a real search would surface.
 
 ## `algolia`
 
@@ -61,9 +71,9 @@ build loudly (`BxSites.PagefindFailed`) rather than degrading silently.
 Right after every doc tree + `sitemap.xml`/`llms.txt` are written, bx-sites
 runs `pagefind --site <siteDir> [...options]` against the *entire* built
 `site/` (indexes a multi-version/multi-locale site in one pass, unlike
-`local`'s per-tree index). Writes into `site/pagefind/` - self-hosted, no
-CDN. No `search-index.json`; `bxSites search-index` is a no-op for this
-provider.
+`local`'s per-tree index - see `bx-sites-blog-versioning-i18n` for
+versions/locales). Writes into `site/pagefind/` - self-hosted, no CDN. No
+`search-index.json`; `bxSites search-index` is a no-op for this provider.
 
 ## Choosing a provider
 
@@ -82,7 +92,7 @@ the three built-in providers and freely allows an arbitrary sub-block
 alongside it (`searchProvider.meilisearch: {...}`). There's no plugin hook
 for the search UI itself; the built-in themes render nothing for an
 unrecognized provider name, so wiring one up is a project-level theme
-override:
+override (see `bx-sites-themes`):
 
 1. **Configure it** - any shape (unvalidated):
    ```yaml
@@ -106,6 +116,6 @@ override:
    populates out of band; a self-hosted engine like Meilisearch/Pagefind
    needs something to push documents after `build` writes `site/`. Use a
    plugin's `onBuildComplete( siteDir, config )` hook (see
-   reference/plugins.md) - `site/search-index.json` is still built even for
+   `bx-sites-plugins`) - `site/search-index.json` is still built even for
    an unrecognized provider (`SearchProviderRegistry.usesLocalIndex()`
    defaults `true`), so it's ready to use as the push payload.

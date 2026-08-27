@@ -1,4 +1,11 @@
-# Plugins Reference
+---
+name: bx-sites-plugins
+metadata:
+  version: "1.0"
+description: Write or install a bx-sites (ortus-boxlang/bx-sites) plugin - the models/BxSitesPlugin.bx build-lifecycle hooks (onConfig, onPageMarkdown, onPageHtml, onNav, onSearchIndex, onSitemap, onBuildComplete), installing a published plugin from ForgeBox, and registering new bxSites CLI verbs via models/BxSitesCliProvider.bx. Use this whenever a user wants to extend bx-sites' build pipeline with custom logic, or add a new bxSites <verb> command.
+---
+
+# BxSites Plugins Reference
 
 A BxSites plugin is nothing more than another BoxLang module - its own
 `box.json` + `ModuleConfig.bx`, installed as a sibling of `bx-sites` in the
@@ -9,6 +16,8 @@ it as a plugin on its own:
 ```yaml title="bxsites.yaml"
 plugins: [ myBxSitesPlugin ]
 ```
+
+(see `bx-sites-configuration` for the `plugins` key)
 
 ## Installing a published plugin
 
@@ -85,10 +94,10 @@ Hooks run in `plugins` array order; each hook's return value (except
 `onBuildComplete`) replaces the value the next hook (or bx-sites itself)
 sees - return the input unchanged if there's nothing to modify.
 `onPageMarkdown`/`onPageHtml` run once per page, per doc tree (main +
-every `docs/versions/<name>/`). `onSearchIndex`/`onSitemap` exist
-specifically for content living outside `docs/` altogether (e.g. a
-dynamically-served page a CLI-provider addon adds) that would otherwise be
-invisible to search/sitemap/`llms.txt`.
+every `docs/versions/<name>/` - see `bx-sites-blog-versioning-i18n`).
+`onSearchIndex`/`onSitemap` exist specifically for content living outside
+`docs/` altogether (e.g. a dynamically-served page a CLI-provider addon
+adds) that would otherwise be invisible to search/sitemap/`llms.txt`.
 
 ### Order of hook calls
 

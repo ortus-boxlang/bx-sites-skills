@@ -1,4 +1,11 @@
-# Variables & Magic Functions Reference
+---
+name: bx-sites-variables-functions
+metadata:
+  version: "1.0"
+description: Use reusable {{ variables }} and BoxLang "magic functions" in bx-sites (ortus-boxlang/bx-sites) Markdown - bxsites.yaml's variables block, docs/functions.bxs, context variables (page/siteConfig/nav/versions/locales), and visualizer recipes (status badges, star ratings, progress bars, trend arrows) including inside table cells. Use this whenever a user wants to avoid repeating a fact across pages, wants a status chip/rating/progress bar in a page or table, or wants to write reusable BoxLang logic callable from Markdown.
+---
+
+# BxSites Variables & Magic Functions
 
 Two ways to keep repeated facts/logic out of Markdown - both share one
 syntax:
@@ -10,7 +17,8 @@ syntax:
 
 ## Reusable variables
 
-Add a `variables` block to `bxsites.yaml`, any shape, flat or nested:
+Add a `variables` block to `bxsites.yaml` (see `bx-sites-configuration`),
+any shape, flat or nested:
 
 ```yaml title="bxsites.yaml"
 variables:
@@ -41,7 +49,8 @@ keep the value locale-neutral.
 
 Add `docs/functions.bxs` (or `src/functions.bxs`) - a plain BoxLang script.
 Any function named with a leading `$` becomes callable from `{{ }}` in
-Markdown, and bare (no `$`) from a project `theme/` `.bxm` override:
+Markdown, and bare (no `$`) from a project `theme/` `.bxm` override (see
+`bx-sites-themes`):
 
 ```bx title="docs/functions.bxs"
 function $shout( text ) {
@@ -157,8 +166,9 @@ Usage: `` `{{ $stars(4) }}` ``, `` `{{ $badge('Stable', 'success') }}` ``,
 `` `{{ $progress(72) }}` ``, `` `{{ $trend(4.2) }}` ``.
 
 **Inside a table cell** - `{{ }}` resolves against raw Markdown before
-tables are even parsed, so any magic function works inside a pipe table
-cell, the closest thing here to GitBook's Select/Rating columns:
+tables are even parsed (see `bx-sites-markdown` for table syntax), so any
+magic function works inside a pipe table cell, the closest thing here to
+GitBook's Select/Rating columns:
 
 ```markdown
 | Feature | Status | Rating |
@@ -179,8 +189,9 @@ build.
 ## Scope
 
 - `functions.bxs` is project-wide - one file, loaded once, available on
-  every page across the main tree and every version/locale tree. No need to
-  duplicate it into `docs/versions/<name>/` or `docs/i18n/<code>/`.
+  every page across the main tree and every version/locale tree (see
+  `bx-sites-blog-versioning-i18n`). No need to duplicate it into
+  `docs/versions/<name>/` or `docs/i18n/<code>/`.
 
 ## Reserved names
 

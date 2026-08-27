@@ -1,11 +1,18 @@
-# Markdown Extensions Reference
+---
+name: bx-sites-markdown
+metadata:
+  version: "1.0"
+description: Write advanced Markdown in bx-sites (ortus-boxlang/bx-sites) - admonitions/callouts, footnotes, definition lists, content tabs, code-block annotations (line numbers, highlighted lines, diff markers, terminal frames, the live tryboxlang playground), Mermaid diagrams, math (KaTeX), GFM tables, icons, responsive images, and Alpine.js interactivity. Use this whenever a user wants a callout box, tabbed content, syntax-highlighted code with extras, a diagram, math notation, a table, an icon, an image, or a small interactive widget in bx-sites Markdown. For GitBook-style `::: name :::` blocks (cards, steppers, buttons, includes...), use bx-sites-content-blocks instead.
+---
+
+# BxSites Markdown Extensions
 
 Beyond standard Markdown, bx-sites turns on admonitions, footnotes, and
 definition lists (Flexmark extensions via bx-markdown), plus its own content
 tabs, math, and fenced-code annotations. Configurable via `bxsites.yaml`'s
-`markdown`/`mermaid`/`math` keys - see the `bx-sites-publishing` skill's
-configuration reference for every key. Tables, `~~strikethrough~~`,
-`- [ ]` task lists and the in-page TOC are always on with no toggle.
+`markdown`/`mermaid`/`math` keys - see the `bx-sites-configuration` skill
+for every key. Tables, `~~strikethrough~~`, `- [ ]` task lists and the
+in-page TOC are always on with no toggle.
 
 ## Admonitions
 
@@ -145,9 +152,10 @@ all optional.
 
 ## Diagrams
 
-Opt-in: `mermaid: true` in `bxsites.yaml`. Then any ` ```mermaid ` fenced
-block renders as a live [Mermaid](https://mermaid.js.org/) diagram
-(flowcharts, sequence diagrams, class diagrams, Gantt charts, and more).
+Opt-in: `mermaid: true` in `bxsites.yaml` (see `bx-sites-configuration`).
+Then any ` ```mermaid ` fenced block renders as a live
+[Mermaid](https://mermaid.js.org/) diagram (flowcharts, sequence diagrams,
+class diagrams, Gantt charts, and more).
 
 ## Math
 
@@ -178,9 +186,9 @@ Standard GFM pipe tables, always on:
 - Every table auto-wraps in `.bxsites-table-wrap` for horizontal scroll on
   wide tables and a sticky header on tall ones - no config, no markdown
   needed.
-- For a status chip / star rating in a cell, use a magic function - see
-  `variables-functions.md`. For a reader-sortable/filterable table, use
-  Alpine.js (below) instead of a plain pipe table.
+- For a status chip / star rating in a cell, use a magic function - see the
+  `bx-sites-variables-functions` skill. For a reader-sortable/filterable
+  table, use Alpine.js (below) instead of a plain pipe table.
 
 ## Icons
 
@@ -219,8 +227,8 @@ no new syntax, on by default. SVGs and animated GIFs are copied through
 unchanged (already resolution-independent / frame-unaware resize would
 flatten them); a remote `<img src="https://...">` is left untouched; an
 image already narrower than every configured width is left as-is (unless
-WebP re-encoding is on). Breakpoints/formats are a build-config concern -
-see the `bx-sites-publishing` skill.
+WebP re-encoding is on). Breakpoints/formats are set via `bxsites.yaml`'s
+`assets.images` key - see `bx-sites-configuration`.
 
 **Captions, alignment, framing, galleries** - plain block-level HTML passes
 through untouched (CommonMark's own HTML-block rule), no bx-sites syntax:
@@ -237,13 +245,12 @@ through untouched (CommonMark's own HTML-block rule), no bx-sites syntax:
 Every page already loads Alpine.js (it powers the built-in dark-mode toggle)
 - drop `x-data`/`x-show`/`@click`/etc. straight onto raw HTML in your
 Markdown, no config, no extra `<script>` tag. **Reach for a purpose-built
-block first** when one exists: [`::: expandable`](content-blocks.md#expandable)/a
-collapsible admonition for a collapsible section, [content
-tabs](#content-tabs) for grouped alternatives, [`::: stepper`](content-blocks.md#stepper)
-for a numbered walkthrough, [`::: button`](content-blocks.md#buttons) for a
-styled link. Alpine is for content with its own client-side state that those
-don't cover - a copy-to-clipboard button, a live filter, a client-sortable
-table:
+block first** when one exists (see `bx-sites-content-blocks`): an
+expandable/collapsible admonition for a collapsible section, content tabs
+for grouped alternatives, a stepper for a numbered walkthrough, a button for
+a styled link. Alpine is for content with its own client-side state that
+those don't cover - a copy-to-clipboard button, a live filter, a
+client-sortable table:
 
 ```markdown
 <div x-data="{ copied: false }">

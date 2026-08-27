@@ -1,4 +1,11 @@
-# Themes Reference
+---
+name: bx-sites-themes
+metadata:
+  version: "1.0"
+description: Choose, customize, override, install, or write a theme for a bx-sites (ortus-boxlang/bx-sites) site - the 10 built-in themes, air-gapped/offline considerations, the ThemeProvider contract (layout.bxm/page.bxm), color-only customization via extraCss, ejecting/overriding a theme, writing one from scratch, installing a published theme from ForgeBox, importing an mkdocs/jekyll/hugo theme, and the homepage hero banner. Use this whenever a user wants to change a bx-sites site's look, brand colors, or write/override its templates.
+---
+
+# BxSites Themes Reference
 
 Themes are native BoxLang `.bxm` templates - no separate template engine or
 build step.
@@ -34,7 +41,9 @@ opt-in footer, version switcher, themed `404.html` (override with
 `docs/404.md`), custom logo/favicon, collapsible nav, Google Analytics,
 social share cards, page tags/icon/summary, nav override support, extra
 CSS/JS injection, admonitions/footnotes/definition lists, content tabs, code
-annotations, responsive images, Mermaid, math.
+annotations, responsive images, Mermaid, math - see `bx-sites-markdown` and
+`bx-sites-content-blocks` for that content-side syntax, and
+`bx-sites-configuration` for every key mentioned here.
 
 ```yaml title="bxsites.yaml"
 theme: { name: material }
@@ -49,16 +58,17 @@ bxSites install:theme --name=bx-sites-theme-blog1 [--version=1.0.0]
 Downloads from ForgeBox into `themes/bx-sites-theme-blog1/` at the project
 root, validating the `ThemeProvider` contract before finishing (a broken
 package fails at install time, not at the next `build`). No separate
-activation step (unlike a plugin) - just set `theme.name` to match. Browse
-published themes under ForgeBox's `bxsites-themes` category.
+activation step (unlike a plugin - see `bx-sites-plugins`) - just set
+`theme.name` to match. Browse published themes under ForgeBox's
+`bxsites-themes` category.
 
 ## Air-gapped / offline sites
 
 Works with zero internet access by default for `bootstrap`, `material`, and
-the seven gallery themes, with the default `local` search provider -
-Bootstrap CSS/JS, highlight.js, Alpine.js, MiniSearch all vendored
-(`resources/assets/vendor/`), no CDN tag anywhere. Turning on `mermaid`
-vendors it the same way.
+the seven gallery themes, with the default `local` search provider (see
+`bx-sites-search`) - Bootstrap CSS/JS, highlight.js, Alpine.js, MiniSearch
+all vendored (`resources/assets/vendor/`), no CDN tag anywhere. Turning on
+`mermaid` vendors it the same way.
 
 Still reach the network only when turned on: `tailwind`'s utility engine
 (CDN JIT compiler - not air-gapped-capable); Mermaid's `elk`-layout diagrams
@@ -99,8 +109,9 @@ A theme folder missing either required file fails fast with
 ## Customizing colors without a full override
 
 Each built-in theme reads its palette from CSS custom properties on `:root`
-(re-declared under `[data-theme="dark"]`). `extraCss` loads *after* the
-theme's own stylesheet, so a same-specificity re-declaration wins:
+(re-declared under `[data-theme="dark"]`). `extraCss` (see
+`bx-sites-configuration`) loads *after* the theme's own stylesheet, so a
+same-specificity re-declaration wins:
 
 ```yaml title="bxsites.yaml"
 extraCss: [ assets/brand.css ]
@@ -123,7 +134,7 @@ extraCss: [ assets/brand.css ]
 
 Every built-in theme guarantees `--bxsites-gradient-start`/`-end`,
 `--bxsites-accent`, and the `--bxsites-step-*` set (backing the
-`::: stepper` block - see the `bx-sites-content` skill) under those exact
+`::: stepper` block - see `bx-sites-content-blocks`) under those exact
 names. Only `bootstrap`, `slate`, and `notion` also expose
 `--bxsites-bg`/`-text`/`-sidebar-bg`/`-sidebar-text`/`-border`/`-link`/
 `-link-hover`/`-code-bg` under those names (`justthedocs` aliases all but

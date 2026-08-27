@@ -1,4 +1,11 @@
-# Configuration Reference
+---
+name: bx-sites-configuration
+metadata:
+  version: "1.0"
+description: Full bxsites.yaml/bxsites.json key reference for a bx-sites (ortus-boxlang/bx-sites) project - baseURL, robots.txt, nav, redirects, markdown options, repo/social/footer, lastUpdated, analytics, ogImage/generateOgImages, extraCss/extraJs, the assets/image pipeline, pageActions, and the plugins/i18n/blog/variables keys. Use this whenever a user asks what a bxsites.yaml key does, how to set the site's base URL/sub-path, how to customize the nav, or wants to tune the responsive-image/asset-bundling pipeline. For themes, search providers, and deployment config, use bx-sites-themes/bx-sites-search/bx-sites-deployment instead.
+---
+
+# BxSites Configuration Reference
 
 One site config at the project root: `bxsites.yaml` (or `.yml`, default/
 preferred) or `bxsites.json` (fully supported). If more than one is present,
@@ -56,7 +63,8 @@ variables: {}
 
 `name` (required) - site name, shown in header/brand mark and page titles.
 `description` - fallback `<meta name="description">`/`og:description` for
-any page without its own `description` frontmatter.
+any page without its own `description` frontmatter (see
+`bx-sites-getting-started` for page frontmatter).
 
 ## `baseURL`
 
@@ -82,14 +90,14 @@ provides them, `basePath`-relative otherwise).
 `Sitemap:` line (when `baseURL` is a full URL). `robots: false` writes
 `Disallow: /` and no `Sitemap:` line - a crawler opt-out only, **not access
 control** (the site is still fully reachable by URL - see
-reference/deployment.md for real access restriction). Drop a hand-authored
+`bx-sites-deployment` for real access restriction). Drop a hand-authored
 `docs/robots.txt` to bypass the generated one entirely (copied byte-for-byte,
 `robots` key ignored once this file exists).
 
 ## `theme`
 
 - `theme.name` - `bootstrap`/`material`/`tailwind`/a gallery theme name, or a
-  custom theme's own name (see reference/themes.md)
+  custom theme's own name - see `bx-sites-themes`
 - `theme.logo`/`theme.favicon` - path (resolved against `docs/assets/`,
   prefixed with `baseURL`) or absolute URL
 - `theme.options.colorMode` - `"auto"` (default, follows OS)/`"light"`/`"dark"`
@@ -115,7 +123,7 @@ reference/deployment.md for real access restriction). Drop a hand-authored
 `"algolia"` (needs `algolia.appId`/`apiKey`/`indexName`), `"pagefind"`
 (`pagefind.bin`/`options`, both optional), or any other string for a fully
 custom provider wired via a theme override. Full comparison and setup in
-reference/search.md.
+`bx-sites-search`.
 
 ## `nav`
 
@@ -149,9 +157,9 @@ folder structure.
 
 ## `redirects`
 
-Site-wide `from`/`to` pairs, main tree only. See the `bx-sites-content`
-skill's `reference/blog-versioning-i18n.md#redirects` for the full picture
-including the per-page `redirect_from` frontmatter alternative.
+Site-wide `from`/`to` pairs, main tree only. See the
+`bx-sites-blog-versioning-i18n` skill for the full picture including the
+per-page `redirect_from` frontmatter alternative.
 
 ```yaml title="bxsites.yaml"
 redirects:
@@ -163,7 +171,8 @@ redirects:
 
 Forwarded as-is to bx-markdown - not redefined/validated by bx-sites beyond
 `enableAdmonition` (bx-markdown itself defaults it `false`; bx-sites
-defaults it `true`).
+defaults it `true`). See `bx-sites-markdown` for the syntax each key
+controls.
 
 | Key | Default | Effect |
 |---|---|---|
@@ -244,8 +253,8 @@ usually nothing to touch.
 ## `mermaid` / `math` / `openapi`
 
 All `false` by default - `true` loads the client-side library (Mermaid/
-KaTeX/Swagger UI) and activates the corresponding Markdown syntax. See the
-`bx-sites-content` skill for the Markdown/`::: openapi` syntax itself.
+KaTeX/Swagger UI) and activates the corresponding Markdown syntax. See
+`bx-sites-markdown` and `bx-sites-content-blocks` for the syntax itself.
 
 ## `pageActions`
 
@@ -259,10 +268,10 @@ on.
 ## `plugins`
 
 `[]` default - array of BoxLang module names to activate. See
-reference/plugins.md.
+`bx-sites-plugins`.
 
 ## `i18n` / `blog` / `variables`
 
-See the `bx-sites-content` skill's `reference/blog-versioning-i18n.md` and
-`reference/variables-functions.md` for the full picture - these keys are
-metadata/tuning for content-authoring features, not build/deploy concerns.
+See the `bx-sites-blog-versioning-i18n` and `bx-sites-variables-functions`
+skills for the full picture - these keys are metadata/tuning for
+content-authoring features, not build/deploy concerns.

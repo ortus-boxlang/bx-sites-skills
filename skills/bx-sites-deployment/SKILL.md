@@ -1,7 +1,15 @@
-# Deployment Reference
+---
+name: bx-sites-deployment
+metadata:
+  version: "1.0"
+description: Deploy or package a built bx-sites (ortus-boxlang/bx-sites) site - deployments/*.json targets (S3-compatible, Azure, GCS, Firebase, FTP/SFTP, rsync, Netlify, Vercel, Cloudflare Pages, local, GitHub Pages), secrets-in-env-vars conventions, bxSites package, the GitHub Actions multi-version-publishing workflow, and restricting who can reach a deployed site. Use this whenever a user wants to ship a built bx-sites site somewhere, set up CI/CD publishing, or gate access to a deployed site.
+---
+
+# BxSites Deployment Reference
 
 `site/` is a plain static site - host it anywhere that serves static files.
-`bxSites deploy` ships it there directly.
+`bxSites deploy` ships it there directly. Build it first (or let `deploy`
+build it for you) - see `bx-sites-build`.
 
 ## The `deploy` command - three invocation shapes
 
@@ -194,8 +202,8 @@ step with `destination_dir: release-2.0`.
 **Project Pages sub-path** - `https://<user>.github.io/<repo>/` (as opposed
 to a `<user>.github.io` user site) needs `baseURL` set to that full URL so
 every internal link/asset/nav entry gets the `/<repo>/` prefix and a real
-`sitemap.xml` is generated. A user site or a custom domain mapped to the
-root can leave `baseURL` at its default (`/`).
+`sitemap.xml` is generated (see `bx-sites-configuration`). A user site or a
+custom domain mapped to the root can leave `baseURL` at its default (`/`).
 
 ## Restricting who can reach a deployed site
 

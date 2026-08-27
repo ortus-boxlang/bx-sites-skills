@@ -1,17 +1,24 @@
-# Content Blocks Reference
+---
+name: bx-sites-content-blocks
+metadata:
+  version: "1.0"
+description: Write GitBook-style content blocks in bx-sites (ortus-boxlang/bx-sites) Markdown - expandables, card grids, columns, steppers, download/file cards, page breaks, buttons, embeds, page-link/link-preview cards, reusable AI prompt blocks, dated changelogs (updates), reusable content includes, reader-toggled conditional content, and the OpenAPI/Swagger widget. All use the same `::: name ... :::` container syntax. Use this whenever a user wants to add a card, tabs-like grid, stepper, CTA button, embed, or any `::: ... :::` block to a bx-sites page. For plain Markdown extensions (admonitions, tabs, code annotations, math, tables, icons), use bx-sites-markdown instead.
+---
 
-GitBook-style content blocks, on top of everything in
-[markdown-extensions.md](markdown-extensions.md). Every block uses the same
-`::: name ... :::` container syntax - a bare `:::` on its own line closes
-whichever block is currently open. Blocks can nest (an expandable containing
-a card grid, for instance). No `bxsites.yaml` config needed unless noted.
-Each maps to a GitBook block of the same name, which is why
-`bxSites migrate --from=gitbook` can convert them directly.
+# BxSites Content Blocks
+
+GitBook-style content blocks, on top of everything in the `bx-sites-markdown`
+skill. Every block uses the same `::: name ... :::` container syntax - a
+bare `:::` on its own line closes whichever block is currently open. Blocks
+can nest (an expandable containing a card grid, for instance). No
+`bxsites.yaml` config needed unless noted. Each maps to a GitBook block of
+the same name, which is why `bxSites migrate --from=gitbook` (see
+`bx-sites-getting-started`) can convert them directly.
 
 ## Expandable
 
 Plain collapsible section - no callout icon/color (for that, use a
-collapsible admonition `???`, see markdown-extensions.md).
+collapsible admonition `???`, see `bx-sites-markdown`).
 
 ```markdown
 ::: expandable "Is this different from a collapsible admonition?"
@@ -24,7 +31,7 @@ Add `open="true"` to start it expanded.
 
 A grid of link cards. `title`, `icon`, `image`, `href` are all optional (no
 `href` renders a non-clickable card). `icon` resolves the same way
-frontmatter `icon` does.
+frontmatter `icon` does (see `bx-sites-markdown`).
 
 ```markdown
 ::: cards
@@ -75,7 +82,7 @@ Irreversible - make sure the backup above finished first.
 ```
 
 Marker/line/palette colors are themeable via CSS custom properties (see the
-`bx-sites-publishing` skill's themes reference).
+`bx-sites-themes` skill).
 
 ## File
 
@@ -195,7 +202,8 @@ Initial release.
 ```
 
 A page containing `::: updates` also gets its own `feed.xml` once
-`bxsites.yaml`'s `baseURL` is a full URL (same requirement as `sitemap.xml`).
+`bxsites.yaml`'s `baseURL` is a full URL (same requirement as `sitemap.xml`
+- see `bx-sites-configuration`).
 
 ## Reusable content (includes)
 
@@ -251,8 +259,9 @@ The Pro plan adds AI-assisted search and unlimited team seats.
 
 Interactive Swagger UI widget for an OpenAPI/Swagger spec (JSON or YAML),
 GitBook's OpenAPI block equivalent. Requires `bxsites.yaml`'s `openapi: true`
-(unset, the placeholder renders but stays inert and ships no extra JS/CSS).
-`src` resolves relative to `docs/assets/`, same as `::: file`.
+(see `bx-sites-configuration`; unset, the placeholder renders but stays
+inert and ships no extra JS/CSS). `src` resolves relative to `docs/assets/`,
+same as `::: file`.
 
 ```markdown
 ::: openapi src="assets/openapi/example.yaml" title="Bookshelf API"
