@@ -1,7 +1,7 @@
 {
   "name": "bx-sites",
   "version": "1.0.0",
-  "description": "Use bx-sites skills for CI workflow execution and debugging in Codex.",
+  "description": "Use bx-sites skills for content authoring, site configuration/theming/publishing, and CI workflow execution/debugging in Codex.",
   "author": {
     "name": "Ortus Solutions"
   },
@@ -9,6 +9,10 @@
   "keywords": [
     "boxlang",
     "bx-sites",
+    "static-site-generator",
+    "content",
+    "themes",
+    "deployment",
     "github-actions",
     "ci",
     "workflows"
@@ -17,22 +21,24 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "bx-sites",
-    "shortDescription": "Run and troubleshoot bx-sites workflows.",
-    "longDescription": "Provides bx-sites workflow skills for the ortus-boxlang/bx-sites repository, including test, snapshot, release, docs, and pages pipelines.",
+    "shortDescription": "Create, publish, and troubleshoot bx-sites sites and workflows.",
+    "longDescription": "Provides bx-sites skills for creating and authoring site content with advanced Markdown/content-block options, configuring/theming/extending/deploying a bx-sites site, and operating the ortus-boxlang/bx-sites repository's own GitHub Actions workflows (test, snapshot, release, docs, pages pipelines).",
     "developerName": "Ortus Solutions",
     "category": "Developer Tools",
     "capabilities": [
       "Automation",
       "CI/CD",
       "Read",
+      "Write",
       "Troubleshooting"
     ],
     "websiteURL": "https://github.com/ortus-boxlang/bx-sites",
     "brandColor": "#DC2626",
     "defaultPrompt": [
-      "Check the latest bx-sites Test Suites workflow failure and summarize root cause.",
-      "Rerun failed jobs for the latest Pull Requests workflow run.",
-      "Show the workflow health of bx-sites for the last week."
+      "Scaffold a new bx-sites project with the material theme and a getting-started page.",
+      "Add a card grid and a stepper walkthrough to docs/getting-started.md.",
+      "Set up a deployments/production.json target for S3 and deploy the site.",
+      "Check the latest bx-sites Test Suites workflow failure and summarize root cause."
     ]
   }
 }

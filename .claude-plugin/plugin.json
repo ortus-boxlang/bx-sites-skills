@@ -1,6 +1,6 @@
 {
   "name": "bx-sites",
-  "description": "Skills for maintaining bx-sites workflows and CI through GitHub Actions.",
+  "description": "Skills for creating, authoring, configuring, theming, and publishing bx-sites sites, plus maintaining bx-sites' own CI through GitHub Actions.",
   "version": "1.0.0",
   "author": {
     "name": "Ortus Solutions",
