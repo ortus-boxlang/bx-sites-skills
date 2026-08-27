@@ -1,7 +1,7 @@
 {
   "name": "bx-sites",
   "version": "1.0.0",
-  "description": "bx-sites skills for workflow execution, release checks, and CI troubleshooting.",
+  "description": "bx-sites skills for content authoring, site configuration/theming/publishing, workflow execution, release checks, and CI troubleshooting.",
   "author": {
     "name": "Ortus Solutions",
     "email": "info@ortussolutions.com",
@@ -13,6 +13,10 @@
   "keywords": [
     "boxlang",
     "bx-sites",
+    "static-site-generator",
+    "content",
+    "themes",
+    "deployment",
     "github-actions",
     "ci",
     "release"
