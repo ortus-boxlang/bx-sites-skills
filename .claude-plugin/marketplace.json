@@ -1,0 +1,15 @@
+{
+  "name": "bx-sites-skills",
+  "description": "bx-sites AI skills for CI and workflow operations.",
+  "owner": {
+    "name": "Ortus Solutions",
+    "email": "info@ortussolutions.com"
+  },
+  "plugins": [
+    {
+      "name": "bx-sites",
+      "source": "./",
+      "description": "Skills for bx-sites GitHub Actions workflows and CI troubleshooting."
+    }
+  ]
+}
