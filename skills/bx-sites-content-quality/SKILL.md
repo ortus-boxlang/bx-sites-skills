@@ -14,7 +14,7 @@ instead of) a full build. Every command runs as `bxSites <verb> [options]`
 ## `lint`
 
 Pre-build content quality pass over raw `docs/` Markdown - distinct from
-`check` (see `bx-sites-build`), which only inspects an already-built `site/`.
+`audit` (see `bx-sites-build`), which only inspects an already-built `site/`.
 
 ```bash
 bxSites lint
@@ -87,5 +87,5 @@ providers (neither uses a local `search-index.json`).
 bxSites lint
 bxSites blog:drafts        # confirm nothing meant to be published is still draft
 bxSites build
-bxSites check               # broken links/alt text - see bx-sites-build
+bxSites audit  # broken links/alt text - see bx-sites-build
 ```

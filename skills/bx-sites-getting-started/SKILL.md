@@ -194,6 +194,6 @@ bxSites clean           # remove site/ and build cache
 (`--port=`/`--host=` to change), and rebuilds automatically on any saved
 change under `docs/`, the site config, or a project `theme/` override - a
 native file watcher, only reconverting what changed, so it stays fast even
-on a large site. See `bx-sites-build` for `doctor`/`stats`/`check` and a
+on a large site. See `bx-sites-build` for `doctor`/`stats`/`audit` and a
 CI-grade pre-publish gate, and `bx-sites-deployment` for shipping the
 result.
