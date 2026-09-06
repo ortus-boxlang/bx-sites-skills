@@ -93,13 +93,13 @@ Reports:
 - Total file count and on-disk size of the built `site/`
 
 Always exits `0` - purely informational, not a pass/fail gate (that's
-`site:check`'s job).
+`audit`'s job).
 
-## `site:check`
+## `audit`
 
 ```bash
 bxSites build
-bxSites site:check
+bxSites audit
 ```
 
 A CI-grade content quality gate over an already-built `site/` (run `build`
@@ -123,11 +123,11 @@ internal-links-only - no HTTP requests to check external URLs.
 
 ```bash
 bxSites build
-bxSites site:check
+bxSites audit
 bxSites stats
 ```
 
-`site:check` catches broken content; `stats` gives a sanity-check summary before
+`audit` catches broken content; `stats` gives a sanity-check summary before
 handing off to `bx-sites-deployment`. See `bx-sites-content-quality` for
 `lint`/`blog:drafts`/`blog:find`/`search:query`, which check raw `docs/`
 source without needing a build first.
@@ -138,5 +138,5 @@ A crashed BoxLang process's exit code doesn't always propagate reliably
 through every calling shell script. When a fix doesn't appear to take
 effect after a "successful" build, don't trust a green exit code alone -
 confirm `site/` was actually (re)written with the expected content, and run
-`doctor`/`site:check` to catch a config or content problem the build step itself
+`doctor`/`audit` to catch a config or content problem the build step itself
 didn't surface.
