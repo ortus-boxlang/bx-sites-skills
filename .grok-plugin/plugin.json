@@ -10,15 +10,5 @@
   "homepage": "https://github.com/ortus-boxlang/bx-sites",
   "repository": "https://github.com/ortus-boxlang/bx-sites-skills",
   "license": "MIT",
-  "keywords": [
-    "boxlang",
-    "bx-sites",
-    "static-site-generator",
-    "content",
-    "themes",
-    "deployment",
-    "github-actions",
-    "ci",
-    "release"
-  ]
+  "keywords": ["boxlang", "bx-sites"]
 }
