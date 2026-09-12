@@ -2,7 +2,7 @@
 name: bx-sites-deployment
 metadata:
   version: "1.0"
-description: Deploy or package a built bx-sites (ortus-boxlang/bx-sites) site - deployments/*.json targets (S3-compatible, Azure, GCS, Firebase, FTP/SFTP, rsync, Netlify, Vercel, Cloudflare Pages, local, GitHub Pages), secrets-in-env-vars conventions, bxSites package, the GitHub Actions multi-version-publishing workflow, and restricting who can reach a deployed site. Use this whenever a user wants to ship a built bx-sites site somewhere, set up CI/CD publishing, or gate access to a deployed site.
+description: Deploy, package, or publish a built bx-sites (ortus-boxlang/bx-sites) site - deployments/*.json targets (S3-compatible, Azure, GCS, Firebase, FTP/SFTP, rsync, Netlify, Vercel, Cloudflare Pages, local, GitHub Pages), secrets-in-env-vars conventions, bxSites package, bxSites publish to bxSites Cloud (the cloud/siteId/apiUrl config key and BXSITES_CLOUD_TOKEN), the GitHub Actions multi-version-publishing workflow, and restricting who can reach a deployed site. Use this whenever a user wants to ship a built bx-sites site somewhere, publish it to bxSites Cloud, set up CI/CD publishing, or gate access to a deployed site.
 ---
 
 # BxSites Deployment Reference
@@ -160,6 +160,38 @@ Cloudflare has no documented REST API for direct-upload deploys (only
 `wrangler`) - this target reverse-engineers Wrangler's own upload flow and
 needs a BLAKE3 hash implementation most default JVMs don't ship. Treat as
 the roughest-edged target; verify a real deploy before relying on it.
+
+## `publish` - bxSites Cloud
+
+[bxSites Cloud](https://bxsites.io) is a hosting SaaS built specifically for
+bxSites sites - `bxSites publish` builds and ships there directly over its
+own publish API, distinct from `deploy`'s pluggable targets above (which all
+ship to infrastructure you own):
+
+```bash
+export BXSITES_CLOUD_TOKEN="cb_..."
+bxSites publish
+```
+
+```yaml title="bxsites.yaml"
+cloud:
+  siteId: "3f2b1c9a-....-....-............"   # the target site's UUID
+  apiUrl: "https://cloud.bxsites.app"          # or a self-hosted instance
+```
+
+**The API token never goes in `bxsites.yaml`** - `publish` reads it from
+`BXSITES_CLOUD_TOKEN`, or an explicit `--token=cb_...` flag (wins when both
+are set), so this file always stays safe to commit. On success it prints
+the site's live URL; it fails with a specific, actionable error rather than
+a stack trace for: no/incomplete `cloud` block, no token available,
+401/403 (bad/unauthorized token), 404 (bad `cloud.siteId`), or anything
+else (400/413/500/network failure, with the actual status/body included).
+
+bxSites Cloud is also what actually serves the AI-facing features described
+in `bx-sites-ai-features` (a published site's MCP server) and the
+`::: contact-form :::` block described in `bx-sites-content-blocks` - both
+render/build for free with the open-source module alone, but need a paid
+Cloud plan to actually work once published.
 
 ## `package` - a plain archive instead
 

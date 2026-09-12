@@ -2,13 +2,13 @@
 name: bx-sites-blog-versioning-i18n
 metadata:
   version: "1.0"
-description: Set up and write a blog, versioned docs, and translated (i18n) locales in bx-sites (ortus-boxlang/bx-sites) - docs/blog/posts frontmatter and authors.yml, post:new, categories/archives/RSS, docs/versions/<name> and version:new, docs/i18n/<code> and i18n:new, composing versions with locales, theme-chrome translation strings, and redirects (frontmatter redirect_from and bxsites.yaml's redirects). Use this whenever a user wants to add a blog post, cut a new docs version, add a translated locale, or keep an old URL working after a page moves.
+description: Set up and write a blog, versioned docs, translated (i18n) locales, and numbered courses in bx-sites (ortus-boxlang/bx-sites) - docs/blog/posts frontmatter and authors.yml, post:new, categories/archives/RSS, docs/versions/<name> and version:new, docs/i18n/<code> and i18n:new, composing versions with locales, theme-chrome translation strings, redirects (frontmatter redirect_from and bxsites.yaml's redirects), and docs/data/courses.yaml with per-lesson progress tracking. Use this whenever a user wants to add a blog post, cut a new docs version, add a translated locale, keep an old URL working after a page moves, or turn a set of pages into a guided lesson-by-lesson course. For the ::: course ::: index block itself, see bx-sites-content-blocks.
 ---
 
-# BxSites Blog, Versioning, i18n & Redirects
+# BxSites Blog, Versioning, i18n, Courses & Redirects
 
-All three are **convention over configuration** - no `bxsites.yaml` key
-turns them on, just a folder.
+All of these are **convention over configuration** - no `bxsites.yaml` key
+turns them on, just a folder (or a data file, for courses).
 
 ## Blog
 
@@ -261,6 +261,83 @@ details like an admonition's accent-bar side don't flip); no machine
 translation - every locale file is hand-authored. `custom:` icons and
 `::: include` both resolve against the project's shared `docs/assets/`
 regardless of locale.
+
+## Courses
+
+A **course** turns a set of pages into a guided, numbered sequence - lesson
+1, lesson 2, ... - with its own auto-generated index, its own scoped
+"Lesson N of M" prev/next (independent of the site's global page-to-page
+order), and per-browser progress tracking once a reader opens a lesson.
+
+### The manifest
+
+Add `docs/data/courses.yaml` (`.toml`/`.json` also work - see
+`bx-sites-variables-functions`'s Data Files section). Each top-level key is
+one course; its `lessons` array lists that course's pages in order - array
+position *is* the lesson number:
+
+```yaml title="docs/data/courses.yaml"
+getting-started:
+  title: "Getting Started with BoxLang"
+  description: "A guided walkthrough from install to your first deployed site."
+  lessons:
+    - guides/course/introduction.md
+    - guides/course/windows-installation.md
+    - guides/course/mac-installation.md
+```
+
+Each `lessons` entry is a `docs/`-relative path, same convention as
+`nav.json`. A lesson's title/summary come from *that page's own
+frontmatter* - never duplicated into the manifest, so renaming a page or
+editing its summary is reflected in the course index automatically.
+Multiple courses just means multiple top-level keys in the same file.
+
+### The index and lesson pages
+
+`::: course id="getting-started" :::` (see `bx-sites-content-blocks`)
+renders that course's numbered index as one real `<ol>` - a typo'd `id`, or
+a course whose lessons don't all exist, degrades to a visible note rather
+than failing the build.
+
+Every page listed in a course's `lessons` automatically gets a `course`
+context (`page.course` - see Context variables above) with its own
+position, title, and *scoped* prev/next (`page.course.prevLesson`/
+`.nextLesson`) - unlike the site's global `page.prevPage`/`.nextPage`, which
+walks the whole nav tree regardless of any course. A lesson doesn't declare
+which course it's in - the manifest is the one source of truth, and the
+same lesson path listed under two different courses is a build error. The
+bootstrap theme renders "Lesson N of M"/course-scoped pager/"Mark complete"
+natively on the lesson page; every other built-in theme computes
+`page.course` correctly for a project to surface via its own theme
+override, native chrome there being on the roadmap.
+
+### Progress tracking
+
+Purely client-side, layered on a course that already fully works without
+it (the index and scoped pager both render server-side). Once a reader
+opens a lesson, `course-progress.js` (shared across every theme, always
+included, no opt-in) records the visit in that browser's own
+`localStorage`, under `bxsites-course-progress-<courseId>` - `firstStarted`,
+`lastVisited`, and a `completed` map keyed by URL. A lesson is marked
+complete automatically on visit; a "Mark complete"/"Mark incomplete" toggle
+lets a reader undo or redo that. No account/backend - it doesn't sync
+across devices, and storage being unavailable (private browsing, blocked
+site data) degrades silently to "no progress remembered."
+
+### Scope
+
+A course whose `lessons` don't *all* exist as real pages in the tree
+currently being built is silently skipped for that tree (not a build
+failure) - relevant because `docs/data/courses.yaml` is loaded once,
+project-wide, and reused unchanged across every version/locale tree; a bare
+`docs/versions/<name>/` snapshot may not contain a course's lesson files at
+all. A lesson can only belong to one course. No nested/multi-track courses,
+no per-version course manifests, in this first version.
+
+`BxSites.InvalidConfig` throws when `docs/data/courses.yaml` has a shape
+problem: a course value isn't an object, is missing a `title`, its
+`lessons` isn't a non-empty array of path strings, or the same lesson path
+is listed under more than one course.
 
 ## Redirects
 

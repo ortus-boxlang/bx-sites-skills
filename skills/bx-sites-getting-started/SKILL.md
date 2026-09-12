@@ -90,7 +90,7 @@ before committing.
 
 ```text
 my-docs/
-├── bxsites.yaml            # site config (bxsites.json also supported)
+├── bxsites.yaml            # site config (.toml/.json also supported)
 ├── deployments/*.json      # deploy targets (see bx-sites-deployment)
 ├── theme/                  # optional project theme override (see bx-sites-themes)
 └── docs/                   # or src/ - every .md file here is a page
