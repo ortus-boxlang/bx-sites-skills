@@ -2,7 +2,7 @@
 name: bx-sites-content-blocks
 metadata:
   version: "1.0"
-description: Write GitBook-style content blocks in bx-sites (ortus-boxlang/bx-sites) Markdown - expandables, card grids, columns, steppers, download/file cards, page breaks, buttons, embeds, page-link/link-preview cards, reusable AI prompt blocks, dated changelogs (updates), reusable content includes, reader-toggled conditional content, and the OpenAPI/Swagger widget. All use the same `::: name ... :::` container syntax. Use this whenever a user wants to add a card, tabs-like grid, stepper, CTA button, embed, or any `::: ... :::` block to a bx-sites page. For plain Markdown extensions (admonitions, tabs, code annotations, math, tables, icons), use bx-sites-markdown instead.
+description: Write GitBook-style content blocks in bx-sites (ortus-boxlang/bx-sites) Markdown - expandables, card grids, columns, steppers, download/file cards, page breaks, buttons, embeds, page-link/link-preview cards, reusable AI prompt blocks, dated changelogs (updates), reusable content includes, reader-toggled conditional content, the OpenAPI/Swagger widget, a premium contact form, data-driven ::: for/::: if loops and conditionals, and a course index. All use the same `::: name ... :::` container syntax. Use this whenever a user wants to add a card, tabs-like grid, stepper, CTA button, embed, contact form, data-driven loop, or any `::: ... :::` block to a bx-sites page. For plain Markdown extensions (admonitions, tabs, code annotations, math, tables, icons), use bx-sites-markdown instead; for the underlying docs/data/*.yaml files and data classes, use bx-sites-variables-functions; for course manifests, use bx-sites-blog-versioning-i18n.
 ---
 
 # BxSites Content Blocks
@@ -284,3 +284,99 @@ hosted. No manual, spec-less version exists - if there's no spec yet, either
 write just enough spec to cover one endpoint, or describe it as ordinary
 content (a parameters table, fenced `http`/`json` request/response pairs,
 optionally walked through with a `::: stepper`).
+
+## Contact form
+
+> **Premium feature.** A `::: contact-form` block always renders as a real,
+> complete form - inputs, labels, submit button, all of it - but *submitting*
+> it only works once the project's own bxSites Cloud plan includes working
+> forms. On a plan that doesn't, a reader who submits anyway sees a friendly
+> "upgrade to enable this form" message instead of their message going
+> anywhere - nothing to configure here to turn that on or off.
+
+A labeled contact/lead-gen form, submitted with `fetch()` to bxSites Cloud
+rather than a page reload:
+
+```markdown
+::: contact-form id="demo-request" to="sales@acme.com" fields="name:text,email*:email,message:textarea" submitLabel="Send"
+:::
+```
+
+- `id` - this form's own slug, matching a form configuration (notification
+  target, spam filtering) set up in bxSites Cloud, not here - never
+  validated against what actually exists there. Defaults to `"contact"`.
+- `to` - optional, purely informational (real delivery routing is
+  configured server-side by the account admin).
+- `fields` - required; comma-separated `name:type` pairs. Add a trailing
+  `*` right after a field's name (before its `:`) to mark it required, e.g.
+  `email*:email`. Supported types: `text`, `email`, `textarea`; anything
+  else falls back to a plain `text` input. A field's label is derived from
+  its name (`full-name` -> "Full Name").
+- `submitLabel` - the submit button's text; defaults to `"Send"`.
+
+Every form carries a hidden honeypot field a real visitor never sees or
+fills in - bxSites Cloud's own spam filtering uses it, no config needed.
+
+## Loop and conditional (data-driven)
+
+`::: for` and `::: if` render their content against data files -
+`docs/data/*.yaml`/`.toml`/`.json`, or a `docs/data/*.bx` data class (see
+`bx-sites-variables-functions`) - addressed by dotted path. Unlike every
+block above, both take a bare expression instead of `key="value"`
+attributes, deliberately as narrow as `{{ }}` itself: no comparison
+operators in this first version.
+
+```markdown
+::: for member, idx in data.team
+{{ idx }}. **{{ member.name }}** - {{ member.role }}
+:::
+```
+
+`::: for <item>, <index> in <dotted.path>` binds `<item>`/`<index>` using
+BoxLang's own two-variable `for` loop semantics - item + 1-based index for
+an array, key + value for a struct, identical syntax either way:
+
+```markdown
+::: for name, enabled in data.flags
+- {{ name }}: {{ enabled }}
+:::
+```
+
+`::: if <dotted.path>` renders only when the resolved value is truthy (an
+empty array/struct/string, `0`, `false` all count as falsy). Chain any
+number of `::: elseif <dotted.path>` and a trailing bare `::: else` for real
+`if`/`elseif`/`else` semantics - the first truthy branch wins, a later
+condition is never even resolved, and one trailing `:::` closes the whole
+chain (no `:::` needed before each `elseif`/`else`, though it still parses
+if you write it that way):
+
+```markdown
+::: if data.flags.darkModeDefault
+Dark mode is on by default.
+::: elseif data.flags.betaBanner
+Beta features are enabled, though dark mode isn't on by default.
+::: else
+Nothing special about this build.
+:::
+```
+
+Both bodies take ordinary Markdown and even other content blocks, including
+a nested `::: for`/`::: if`. A real comparison (`==`, `&&`, ...) needs a
+magic function instead - see `bx-sites-variables-functions`. Full picture on
+`data.*` (theme override, magic function, or these two directives) is in
+that skill's Data Files section.
+
+## Course index
+
+`::: course id="..." :::` renders a whole course's lessons as one numbered,
+linked index, built from a `docs/data/courses.yaml` manifest rather than
+hand-authored:
+
+```markdown
+::: course id="getting-started" :::
+```
+
+Takes only a bare `id` - no `href`/body of its own; the lessons and their
+order come entirely from the manifest. See the `bx-sites-blog-versioning-i18n`
+skill's Courses section for the manifest format, scoped lesson-to-lesson
+navigation, and reader progress tracking.

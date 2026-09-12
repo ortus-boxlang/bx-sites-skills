@@ -2,14 +2,15 @@
 name: bx-sites-configuration
 metadata:
   version: "1.0"
-description: Full bxsites.yaml/bxsites.json key reference for a bx-sites (ortus-boxlang/bx-sites) project - baseURL, robots.txt, nav, redirects, markdown options, repo/social/footer, lastUpdated, analytics, ogImage/generateOgImages, extraCss/extraJs, the assets/image pipeline, pageActions, and the plugins/i18n/blog/variables keys. Use this whenever a user asks what a bxsites.yaml key does, how to set the site's base URL/sub-path, how to customize the nav, or wants to tune the responsive-image/asset-bundling pipeline. For themes, search providers, and deployment config, use bx-sites-themes/bx-sites-search/bx-sites-deployment instead.
+description: Full bxsites.yaml/bxsites.toml/bxsites.json key reference for a bx-sites (ortus-boxlang/bx-sites) project - baseURL, robots.txt, nav, redirects, markdown options, repo/social/footer, lastUpdated, analytics, ogImage/generateOgImages, extraCss/extraJs, the assets/image pipeline, pageActions, mcp, and the plugins/i18n/blog/variables/docbox/coldbox/cloud keys. Use this whenever a user asks what a bxsites.yaml/.toml key does, how to set the site's base URL/sub-path, how to customize the nav, or wants to tune the responsive-image/asset-bundling pipeline. For themes, search providers, and deployment/publish config, use bx-sites-themes/bx-sites-search/bx-sites-deployment instead; for docbox/coldbox and mcp/AI-agent-skills detail, use bx-sites-api-docs/bx-sites-ai-features.
 ---
 
 # BxSites Configuration Reference
 
 One site config at the project root: `bxsites.yaml` (or `.yml`, default/
-preferred) or `bxsites.json` (fully supported). If more than one is present,
-`bxsites.yaml` wins, then `bxsites.yml`, then `bxsites.json`. Only `name` is
+preferred), `bxsites.toml`, or `bxsites.json` - all three fully supported,
+same keys, same defaults. If more than one is present, `bxsites.yaml` wins,
+then `bxsites.yml`, then `bxsites.toml`, then `bxsites.json`. Only `name` is
 required - everything else defaults as shown. A partial `theme` object
 merges one level deep (`{theme: {name: material}}` keeps the default empty
 `options`).
@@ -57,6 +58,22 @@ blog:
   postsPerPage: 10
   feed: true
 variables: {}
+```
+
+All three formats use the identical key names/shapes - only the syntax
+differs. TOML nests the same way YAML/JSON do, using `[section]`/
+`[[section]]` (array-of-tables) headers:
+
+```toml title="bxsites.toml"
+name = "My Docs"
+baseURL = "/"
+
+[theme]
+name = "material"
+
+[[nav]]
+title = "Reference"
+children = [ "api/docbox/index.md" ]
 ```
 
 ## `name` / `description`
@@ -269,6 +286,26 @@ on.
 
 `[]` default - array of BoxLang module names to activate. See
 `bx-sites-plugins`.
+
+## `mcp`
+
+`false` default. `true` writes `site/mcp-index.json`/`mcp-manifest.json`/
+`mcp-nav.json` on every build, for bxSites Cloud's AI-agent MCP server -
+independent of `search`/`searchProvider`. See `bx-sites-ai-features`.
+
+## `docbox` / `coldbox`
+
+Settings for `bxSites docbox` (a BoxLang/CFML API reference via DocBox) and
+`bxSites coldbox` (a ColdBox app's routes/handlers/models/modules read from
+disk) - `mappings`/`excludes`/`pagePathPrefix`/`tags` for the former,
+`appRoot`/`include`/`pagePathPrefix`/`tags` for the latter. Every key is
+optional; see `bx-sites-api-docs` for the full schema and generated output.
+
+## `cloud`
+
+`cloud.siteId`/`cloud.apiUrl` - where `bxSites publish` ships the built
+site in bxSites Cloud. Both default to `""`; only `publish` needs this
+block. The API token never lives here - see `bx-sites-deployment`.
 
 ## `i18n` / `blog` / `variables`
 
