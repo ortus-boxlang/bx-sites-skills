@@ -86,11 +86,19 @@ A theme is a folder with:
   `variables.page`, `variables.nav`, `variables.siteConfig`,
   `variables.themeDir`, `variables.basePath` (root-relative, ends `/` -
   prefix every internal `href`/`src` with it rather than hardcoding a
-  leading `/`). Includes `page.bxm` via `#variables.themeDir#/page.bxm`.
+  leading `/`). Includes the resolved body template via
+  `#variables.themeDir#/#variables.bodyFile#` (`page.bxm` unless a page/section
+  resolves to something else - see "Multiple layouts per page" below).
 - **`page.bxm`** (required) - article body. Renders `variables.page.contentHtml`
   (already-converted markdown).
 - **`search.bxm`** (optional) - search box markup, included only when
   `search: true`.
+- **`blog.bxm`** (optional) - an alternate outer shell for the blog's own
+  listing/category/archive/author/stats pages. Falls back to `layout.bxm`
+  when a theme doesn't have it.
+- **`blog-page.bxm`** (optional) - an alternate body for an individual blog
+  post, rendered under the theme's normal `layout.bxm`. Falls back to
+  `page.bxm` when a theme doesn't have it.
 - **`assets/`** (optional) - theme CSS/JS, copied to `site/assets/theme/`.
 
 Also available: `variables.page.editUrl`/`.lastUpdated` (empty strings if
@@ -101,10 +109,69 @@ unconfigured), `variables.siteConfig.repo`/`.social`/`.footer`,
 `bxsitesIcon( name )`).
 
 A theme folder missing either required file fails fast with
-`BxSites.InvalidTheme` at build time.
+`BxSites.InvalidTheme` at build time. `blog.bxm`/`blog-page.bxm` are never
+enforced - same "optional, falls back" shape `search.bxm` already has.
 
 **Resolution order**: project `theme/` override → installed
 `themes/<name>/` matching `theme.name` → a built-in theme named `theme.name`.
+
+## Multiple layouts per page
+
+A theme can offer more than one outer shell and more than one body template,
+letting a blog (or any other content type) look different from the rest of
+the site while reusing the same theme's chrome/assets. Two independent
+resolution chains:
+
+- **Outer shell** - always `layout.bxm`, except the blog's own listing/
+  category/archive/author/stats pages, which use `blog.bxm` when the active
+  theme has it. Not controllable per-page; it follows content type.
+- **Body** - `page.bxm` by default. A blog post uses `blog-page.bxm` when the
+  active theme has it. Either way, a page's own frontmatter always wins when
+  set:
+
+```markdown title="docs/marketing/press-release.md"
+---
+title: We raised a Series A
+layout: press-release
+---
+```
+
+`layout: press-release` renders this one page's body through
+`theme/press-release.bxm` (or the active built-in theme's, if it has one)
+instead of `page.bxm` - still inside the site's normal `layout.bxm` shell. A
+`layout:` naming a file the active theme doesn't have falls back to
+`page.bxm` rather than failing the build, so switching themes never breaks a
+page that named one theme's own custom layout.
+
+`bootstrap` ships `blog.bxm`/`blog-page.bxm` as a working example to copy;
+the other built-in themes don't yet, and fall back to `layout.bxm`/`page.bxm`
+for blog content the same way any incomplete `theme/` override would.
+
+### Which layout/body is active
+
+Every `.bxm` a page renders through - `layout.bxm`, `page.bxm`, `blog.bxm`,
+`blog-page.bxm`, or a project's own custom one - can read which files
+actually resolved, the same bare way it already reads `variables.page`/
+`variables.data`:
+
+- `variables.layoutFile` - the outer shell in use, e.g. `"layout.bxm"` or
+  `"blog.bxm"`
+- `variables.bodyFile` - the body in use, e.g. `"page.bxm"`,
+  `"blog-page.bxm"`, or a frontmatter-named one
+- `variables.page.layout` - the page's own raw frontmatter `layout:` value,
+  if it set one; `""` otherwise
+
+Useful for a body class hook, or branching without a separate template:
+
+```bx title="theme/layout.bxm"
+<body class="layout-#reReplace( variables.bodyFile, '\.bxm$', '' )#">
+```
+
+```bx title="theme/page.bxm"
+<bx:if variables.bodyFile == "blog-page.bxm">
+	<!-- blog-post-only chrome -->
+</bx:if>
+```
 
 ## Customizing colors without a full override
 
@@ -219,6 +286,13 @@ highlighting, admonitions, tabs, math, all of it) - there's nothing left to
 parse, only lay out. Add breadcrumbs/tags/prev-next/dark-mode/search by
 copying the pattern from a built-in theme's own `page.bxm`/`layout.bxm` (a
 built-in `search.bxm` is only included when `search: true`).
+
+The example above hardcodes `page.bxm`, which is fine for a minimal theme -
+swap that line for `<bx:include template="#variables.themeDir#/#variables.bodyFile#">`
+(a built-in theme's own `layout.bxm` already does) to opt into "Multiple
+layouts per page" above, so a project can add its own `theme/blog-page.bxm`
+or `theme/<name>.bxm` frontmatter override later without touching
+`layout.bxm` again.
 
 ## Importing a theme from another SSG
 

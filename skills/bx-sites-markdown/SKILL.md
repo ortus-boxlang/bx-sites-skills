@@ -190,6 +190,27 @@ Standard GFM pipe tables, always on:
   `bx-sites-variables-functions` skill. For a reader-sortable/filterable
   table, use Alpine.js (below) instead of a plain pipe table.
 
+## Layout
+
+A page's `layout` frontmatter picks which body template the active theme
+renders it through, instead of the theme's default `page.bxm`:
+
+```markdown
+---
+title: We raised a Series A
+layout: press-release
+---
+```
+
+Renders through `theme/press-release.bxm` (or the active built-in theme's
+own, if it ships one) - still inside the site's normal `layout.bxm` shell. A
+`layout:` naming a file the active theme doesn't have falls back to
+`page.bxm` rather than failing the build. Unset (the default) keeps a page
+on its default template - a blog post still gets `blog-page.bxm` when the
+active theme has one, unaffected either way. See `bx-sites-themes`'s own
+"Multiple layouts per page" for the full resolution chain and how to add a
+theme's own alternate templates.
+
 ## Icons
 
 A page's `icon` frontmatter (and a nav/card/button `icon` attribute) accepts

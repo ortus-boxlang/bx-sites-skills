@@ -66,6 +66,9 @@ pages, still renders in full on the post's own page.
   with a visible "🚧 Draft" banner so you can proofread locally
 - Every ordinary page frontmatter key (`icon`, `description`, `ogImage`,
   `toc`) also works on a post - see `bx-sites-getting-started`
+- `layout` - renders this post's own body through a named `.bxm` instead of
+  the theme's default (the active theme's own `blog-page.bxm` when it has
+  one, else `page.bxm`) - see `bx-sites-themes`'s "Multiple layouts per page"
 
 `docs/assets/blog/` is just a conventional subfolder for post
 covers/author photos - not enforced, any `docs/assets/**` path works.
