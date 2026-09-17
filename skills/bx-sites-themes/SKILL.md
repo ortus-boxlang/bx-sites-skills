@@ -147,6 +147,32 @@ page that named one theme's own custom layout.
 the other built-in themes don't yet, and fall back to `layout.bxm`/`page.bxm`
 for blog content the same way any incomplete `theme/` override would.
 
+### Which layout/body is active
+
+Every `.bxm` a page renders through - `layout.bxm`, `page.bxm`, `blog.bxm`,
+`blog-page.bxm`, or a project's own custom one - can read which files
+actually resolved, the same bare way it already reads `variables.page`/
+`variables.data`:
+
+- `variables.layoutFile` - the outer shell in use, e.g. `"layout.bxm"` or
+  `"blog.bxm"`
+- `variables.bodyFile` - the body in use, e.g. `"page.bxm"`,
+  `"blog-page.bxm"`, or a frontmatter-named one
+- `variables.page.layout` - the page's own raw frontmatter `layout:` value,
+  if it set one; `""` otherwise
+
+Useful for a body class hook, or branching without a separate template:
+
+```bx title="theme/layout.bxm"
+<body class="layout-#reReplace( variables.bodyFile, '\.bxm$', '' )#">
+```
+
+```bx title="theme/page.bxm"
+<bx:if variables.bodyFile == "blog-page.bxm">
+	<!-- blog-post-only chrome -->
+</bx:if>
+```
+
 ## Customizing colors without a full override
 
 Each built-in theme reads its palette from CSS custom properties on `:root`
