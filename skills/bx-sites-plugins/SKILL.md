@@ -93,8 +93,10 @@ class {
 Hooks run in `plugins` array order; each hook's return value (except
 `onBuildComplete`) replaces the value the next hook (or bx-sites itself)
 sees - return the input unchanged if there's nothing to modify.
-`onPageMarkdown`/`onPageHtml` run once per page, per doc tree (main +
-every `docs/versions/<name>/` - see `bx-sites-blog-versioning-i18n`).
+`onPageMarkdown`/`onPageHtml` run once per page, per doc tree - the main
+`docs/` tree, every `docs/versions/<name>/`, and every `docs/i18n/<code>/`
+(see `bx-sites-blog-versioning-i18n`). Trees render in parallel, so a hook
+must not depend on the order trees are built in.
 `onSearchIndex`/`onSitemap` exist specifically for content living outside
 `docs/` altogether (e.g. a dynamically-served page a CLI-provider addon
 adds) that would otherwise be invisible to search/sitemap/`llms.txt`.

@@ -40,7 +40,7 @@ Either installer drops a `bxSites` script on `PATH`.
 ## Scaffold a new project
 
 ```bash
-bxSites new my-docs [--name="My Project Docs"] [--theme=material] [--description=...] [--format=yaml|json]
+bxSites new my-docs [--name="My Project Docs"] [--theme=material] [--description=...] [--format=yaml|toml|json] [--source=docs|src]
 cd my-docs
 ```
 
@@ -57,9 +57,15 @@ my-docs/
 - `--theme` defaults to `bootstrap` - see the `bx-sites-themes` skill for
   all 10 built-in options.
 - `--format` defaults to `yaml` (scaffolds `bxsites.yaml`, the
-  default/preferred format); `json` scaffolds `bxsites.json` instead. Both
-  are fully supported and equivalent - see the `bx-sites-configuration`
-  skill for the full key reference.
+  default/preferred format); `toml` scaffolds `bxsites.toml`, `json`
+  `bxsites.json`. All three are fully supported and equivalent - see the
+  `bx-sites-configuration` skill for the full key reference.
+- `--source` defaults to `docs`; `--source=src` scaffolds `src/` instead for
+  a project that isn't really "docs" in spirit (a marketing site, a
+  portfolio). `--docs`/`--site` are shortcuts for the two - use only one.
+  Either way the choice affects the initial folder only; every later verb
+  resolves whichever of `docs/`/`src/` exists, and build output always goes
+  to `site/`.
 
 ## Bringing an existing project in
 
@@ -100,6 +106,8 @@ my-docs/
     ├── 404.md               # optional custom 404 page
     ├── robots.txt           # optional hand-authored robots.txt (overrides generated one)
     ├── assets/              # images, downloads, icons - copied to site/assets/
+    │   └── gallery/<name>/  # {name}-{N}.jpg|png|webp|gif, for ::: image-gallery name="..."
+    ├── data/                # optional data files, reachable as {{ data.<file> }}
     ├── includes/            # reusable content fragments, spliced via ::: include
     ├── blog/                # see bx-sites-blog-versioning-i18n
     ├── versions/            # see bx-sites-blog-versioning-i18n
@@ -108,11 +116,13 @@ my-docs/
 
 Folder nesting under `docs/` becomes nav nesting automatically (override
 with an explicit `nav` - see `bx-sites-configuration`). `assets/`, `blog/`,
-`versions/`, and `i18n/` are reserved folder names with special meaning -
-don't repurpose them for ordinary content. A project that isn't really
-"docs" in spirit (a marketing site, a portfolio) can use `src/` instead of
-`docs/` with zero other changes - every verb looks for `docs/` first and
-falls back to `src/`.
+`versions/`, `i18n/`, and `includes/` are reserved folder names with special
+meaning - don't repurpose them for ordinary content. (`data/` is a
+convention folder rather than a reserved one - see
+`bx-sites-variables-functions`.) A project that isn't really "docs" in
+spirit (a marketing site, a portfolio) can use `src/` instead of `docs/`
+with zero other changes - every verb looks for `docs/` first and falls back
+to `src/`.
 
 ## Adding and scaffolding pages
 
@@ -162,6 +172,7 @@ Your content here.
 - `ogImage` - per-page social card image, overrides the site-wide one
 - `toc: false` - hides the page's own "On this page" TOC even with 2+ headings
 - `redirect_from` - array of old pretty-URL segments that should redirect here; `page:rename` stamps this automatically
+- `layout` - renders this page through a named theme template instead of the theme's defaults (e.g. `layout: home` for a marketing homepage) - see `bx-sites-themes`
 
 It's a small hand-rolled parser, not full YAML: inline lists (`tags: [a, b]`),
 block lists (`- item`), and `>`/`|` block scalars work; nested

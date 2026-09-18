@@ -192,8 +192,8 @@ Standard GFM pipe tables, always on:
 
 ## Layout
 
-A page's `layout` frontmatter picks which body template the active theme
-renders it through, instead of the theme's default `page.bxm`:
+A page's `layout` frontmatter picks which template the active theme renders
+it through, instead of that theme's defaults:
 
 ```markdown
 ---
@@ -202,14 +202,18 @@ layout: press-release
 ---
 ```
 
-Renders through `theme/press-release.bxm` (or the active built-in theme's
-own, if it ships one) - still inside the site's normal `layout.bxm` shell. A
-`layout:` naming a file the active theme doesn't have falls back to
-`page.bxm` rather than failing the build. Unset (the default) keeps a page
-on its default template - a blog post still gets `blog-page.bxm` when the
-active theme has one, unaffected either way. See `bx-sites-themes`'s own
-"Multiple layouts per page" for the full resolution chain and how to add a
-theme's own alternate templates.
+Resolves **both** the outer shell and the body - `layout: press-release`
+renders through `theme/press-release.bxm` (or the active built-in theme's
+own, if it ships one) as the whole page, not just inside the normal
+`layout.bxm` shell. `layout: home` is the built-in example: `bootstrap`'s
+`home.bxm` is a marketing homepage with no sidebar/TOC rail that never
+includes the page's own Markdown body. A `layout:` naming a file the active
+theme doesn't have falls back to `layout.bxm`/`page.bxm` rather than failing
+the build. Unset (the default) keeps a page on its default templates - a
+blog post still gets `blog-page.bxm` (and blog listing pages `blog.bxm`)
+when the active theme has them, unaffected either way. See
+`bx-sites-themes`'s own "Multiple layouts per page" for the full resolution
+chain and how to add a theme's own alternate templates.
 
 ## Icons
 
@@ -251,7 +255,13 @@ image already narrower than every configured width is left as-is (unless
 WebP re-encoding is on). Breakpoints/formats are set via `bxsites.yaml`'s
 `assets.images` key - see `bx-sites-configuration`.
 
-**Captions, alignment, framing, galleries** - plain block-level HTML passes
+**Galleries** - for a responsive grid of images with an optional
+click-to-enlarge lightbox, use the `::: image-gallery` content block (see
+`bx-sites-content-blocks`) rather than hand-rolled HTML - it lists images
+explicitly or discovers them from `docs/assets/gallery/{name}/`, and its
+lightbox is enabled by `bxsites.yaml`'s `imageGallery: true`.
+
+**Captions, alignment, framing** - plain block-level HTML passes
 through untouched (CommonMark's own HTML-block rule), no bx-sites syntax:
 
 ```markdown

@@ -2,7 +2,7 @@
 name: bx-sites-search
 metadata:
   version: "1.0"
-description: Configure and troubleshoot search in a bx-sites (ortus-boxlang/bx-sites) site - the default local static/client-side provider (MiniSearch, search-index.json, Cmd/Ctrl+K palette), Algolia DocSearch, Pagefind, and wiring up a fully custom provider (e.g. Meilisearch) via a theme override. Use this whenever a user wants to turn search on/off, switch providers, or debug why search results look wrong.
+description: Configure and troubleshoot search in a bx-sites (ortus-boxlang/bx-sites) site - the default local static/client-side provider (MiniSearch, search-index.json, enriched results with breadcrumbs/snippets/match highlighting, / and Cmd/Ctrl+K shortcuts with arrow-key navigation), Algolia DocSearch, Pagefind, and wiring up a fully custom provider (e.g. Meilisearch) via a theme override. Use this whenever a user wants to turn search on/off, switch providers, or debug why search results look wrong.
 ---
 
 # BxSites Search Providers Reference
@@ -15,15 +15,30 @@ active.
 
 Fully static/client-side - the mkdocs default approach. At `build` time,
 `SearchIndexer` writes `site/search-index.json`: one entry per page with
-`title`, `url`, frontmatter `tags`, every heading's text, and a truncated
-plain-text body copy. In the browser, `assets/search.js` fetches it once and
-builds a [MiniSearch](https://lucaong.github.io/minisearch/) index (prefix +
+`title`, `url`, frontmatter `tags`, every heading's text, a truncated
+plain-text body copy, plus that page's `section` (its top-level ancestor's
+title) and `breadcrumb` (the full ancestor-title chain) used for result
+display. In the browser, `assets/search.js` fetches it once and builds a
+[MiniSearch](https://lucaong.github.io/minisearch/) index (prefix +
 typo-tolerant fuzzy matching, both on by default; title weighted highest,
 then tags, then headings, then body). No server/database/external service.
 
+**What a result looks like** - both the sidebar dropdown and the command
+palette render the same enriched row, so a reader can tell hits apart
+without opening each one:
+
+- the page title, with the **matched terms highlighted** (highlighting
+  follows the site's configured accent color, so it survives re-theming)
+- a **breadcrumb line** - the entry's own ancestor titles joined with `›`
+  (empty for a top-level page)
+- a **body snippet**, built from the matched region of the indexed body
+
 **Shortcuts**: `/` focuses the sidebar box; Cmd/Ctrl+K opens a
 command-palette overlay (reuses the same MiniSearch index, `local` only);
-`Escape` closes either.
+`Escape` closes either (and blurs the sidebar box). In both, **Arrow
+Up/Down** move the active highlight through results, **Enter** opens the
+highlighted (or first) result, and hovering a result moves the highlight to
+it as well.
 
 ```bash
 bxSites search-index
@@ -31,6 +46,10 @@ bxSites search-index
 rebuilds just the index (`build` already runs this; useful standalone - see
 `bx-sites-build`). `bxSites search:query --query="..."` (see
 `bx-sites-content-quality`) sanity-checks what a real search would surface.
+
+Everything a result shows - title, breadcrumb, snippet - comes from that
+build-time file, so a page that moved/re-nested keeps showing its old
+breadcrumb until the next `build` (or `search-index`).
 
 ## `algolia`
 

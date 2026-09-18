@@ -94,7 +94,8 @@ Real AWS S3, or any S3-compatible service. Set `endpoint` for non-AWS, and
 
 Same shape (custom `endpoint` + `forcePathStyle: true`) also covers
 Cloudflare R2 (`https://<accountid>.r2.cloudflarestorage.com`), Backblaze
-B2, and MinIO/Wasabi.
+B2, and MinIO/Wasabi. Optional `acl` (e.g. `"public-read"`) is sent as the
+`x-amz-acl` header when present.
 
 ### `azure`
 
@@ -103,7 +104,9 @@ B2, and MinIO/Wasabi.
 ```
 
 Authenticate with exactly one of a SAS token, an account key, or a full
-connection string.
+connection string - `sasTokenEnvVar`, `connectionStringEnvVar`, or
+`accountKeyEnvVar` (in that precedence order if more than one is somehow
+set). Optional `prefix` prefixes every uploaded blob name (e.g. `"docs/"`).
 
 ### `gcs`
 
@@ -126,7 +129,11 @@ Service Accounts → Keys).
 { "target": "sftp", "host": "example.com", "username": "deploy", "remotePath": "/var/www/html", "key": "/home/me/.ssh/id_rsa" }
 ```
 
-SFTP accepts a password or an SSH key. Preserves the site's folder structure.
+SFTP accepts a password (`passwordEnvVar`) or an SSH key (`key`, a **path**
+to the private key file, plus optional `passphraseEnvVar` for that key); FTP
+requires `passwordEnvVar`. Both preserve the site's folder structure. Other
+optional fields: `port` (FTP `21`, SFTP `22`), `passive` (FTP, `true`),
+`proxyServer`, `timeout` (seconds, `30`), and SFTP's `fingerprint`.
 
 ### `rsync`
 

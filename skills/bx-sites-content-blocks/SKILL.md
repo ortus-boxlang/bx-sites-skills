@@ -2,7 +2,7 @@
 name: bx-sites-content-blocks
 metadata:
   version: "1.0"
-description: Write GitBook-style content blocks in bx-sites (ortus-boxlang/bx-sites) Markdown - expandables, card grids, columns, steppers, download/file cards, page breaks, buttons, embeds, page-link/link-preview cards, reusable AI prompt blocks, dated changelogs (updates), reusable content includes, reader-toggled conditional content, the OpenAPI/Swagger widget, a premium contact form, data-driven ::: for/::: if loops and conditionals, and a course index. All use the same `::: name ... :::` container syntax. Use this whenever a user wants to add a card, tabs-like grid, stepper, CTA button, embed, contact form, data-driven loop, or any `::: ... :::` block to a bx-sites page. For plain Markdown extensions (admonitions, tabs, code annotations, math, tables, icons), use bx-sites-markdown instead; for the underlying docs/data/*.yaml files and data classes, use bx-sites-variables-functions; for course manifests, use bx-sites-blog-versioning-i18n.
+description: Write GitBook-style content blocks in bx-sites (ortus-boxlang/bx-sites) Markdown - expandables, card grids, columns, steppers, responsive image galleries, download/file cards, page breaks, buttons, embeds, page-link/link-preview cards, reusable AI prompt blocks, dated changelogs (updates), reusable content includes, reader-toggled conditional content, the OpenAPI/Swagger widget, a premium contact form, data-driven ::: for/::: if loops and conditionals, and a course index. All use the same `::: name ... :::` container syntax. Use this whenever a user wants to add a card, tabs-like grid, stepper, CTA button, embed, contact form, data-driven loop, or any `::: ... :::` block to a bx-sites page. For plain Markdown extensions (admonitions, tabs, code annotations, math, tables, icons), use bx-sites-markdown instead; for the underlying docs/data/*.yaml files and data classes, use bx-sites-variables-functions; for course manifests, use bx-sites-blog-versioning-i18n.
 ---
 
 # BxSites Content Blocks
@@ -83,6 +83,48 @@ Irreversible - make sure the backup above finished first.
 
 Marker/line/palette colors are themeable via CSS custom properties (see the
 `bx-sites-themes` skill).
+
+## Image gallery
+
+A responsive grid of images. Optional `columns` is `2`, `3`, or `4`
+(default `3` - any other value falls back to `3`). Two ways to fill it:
+
+List each image explicitly with `::: image` children - `src` is required,
+`alt` and `caption` are both optional:
+
+```markdown
+::: image-gallery columns="3"
+::: image src="../assets/favicon.png" alt="BoxLang icon" caption="Icon"
+:::
+::: image src="../assets/home-banner.jpg" alt="Home banner"
+:::
+::: image src="../assets/og-image.png" caption="Social preview"
+:::
+:::
+```
+
+Or let bxSites discover them by convention - drop files named
+`{name}-{order}.{jpg,jpeg,png,webp,gif}` into `docs/assets/gallery/{name}/`
+and reference them by `name` alone, no children needed. Files are sorted
+numerically by `{order}`:
+
+```markdown
+::: image-gallery name="showcase" columns="3"
+:::
+```
+
+- Convention mode carries no per-image `alt`/`caption` - use `::: image`
+  children when either matters. A gallery with neither `::: image` children
+  nor a `name`, or an `::: image` missing its `src`, renders a visible
+  "invalid" placeholder in place of that item rather than failing the build.
+- `src` is file-relative, so every image still picks up the usual responsive
+  `<picture>`/WebP treatment for free (see `bx-sites-markdown`).
+- The **click-to-enlarge lightbox** needs `imageGallery: true` in
+  `bxsites.yaml` (default `false`) - the same opt-in pattern `openapi`/
+  `mermaid`/`math` already use, and wired into all ten themes. Unset, the
+  grid still renders, just without the lightbox JS. Keyboard: `Escape`
+  closes, `ArrowLeft`/`ArrowRight` move within the same gallery only (it
+  wraps, and hides prev/next when a gallery holds a single image).
 
 ## File
 
@@ -365,6 +407,12 @@ a nested `::: for`/`::: if`. A real comparison (`==`, `&&`, ...) needs a
 magic function instead - see `bx-sites-variables-functions`. Full picture on
 `data.*` (theme override, magic function, or these two directives) is in
 that skill's Data Files section.
+
+`page` and `data` are **reserved loop-variable names** - `::: for page, i in
+...` is an error (they'd shadow the real context variables); pick any other
+name. A `::: for` whose path resolves to something that's neither an array
+nor a struct fails with `BxSites.InvalidForTarget`, and an unresolvable
+dotted path in either directive is `BxSites.UnknownVariable`.
 
 ## Course index
 

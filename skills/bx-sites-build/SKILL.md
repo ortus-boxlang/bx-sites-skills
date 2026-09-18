@@ -24,6 +24,14 @@ to a provider like `algolia`/`pagefind` that doesn't use it - see
 when that provider is active, and copies theme + `docs/assets/**` into
 `site/`.
 
+A multi-tree build (each `docs/versions/<name>/` and each
+`docs/i18n/<code>/`) renders those trees **in parallel** rather than one
+after another, so a site with several locales/versions costs roughly as much
+as its slowest tree, not the sum of them. A failure inside any parallel tree
+is surfaced as that real error and fails the build - it's never swallowed
+into a "successful" run, which matters on a large site where the broken tree
+isn't the one you were watching.
+
 ## `serve`
 
 ```bash

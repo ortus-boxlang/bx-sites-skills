@@ -77,6 +77,11 @@ bxSites coldbox --appRoot=app   # app lives elsewhere
 bxSites build
 ```
 
+A resolved root with no `handlers/`, `config/ColdBox`, `config/Router`, or
+`modules_app/` fails with `BxSites.NotAColdBoxApp` rather than producing
+empty pages - check `--appRoot`/`coldbox.appRoot` first when that's the
+error.
+
 ```yaml title="bxsites.yaml"
 coldbox:
   appRoot: "."
