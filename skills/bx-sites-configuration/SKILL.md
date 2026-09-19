@@ -2,7 +2,7 @@
 name: bx-sites-configuration
 metadata:
   version: "1.0"
-description: Full bxsites.yaml/bxsites.toml/bxsites.json key reference for a bx-sites (ortus-boxlang/bx-sites) project - baseURL, robots.txt, nav, redirects, markdown options, repo/social/footer, lastUpdated, analytics, ogImage/generateOgImages, extraCss/extraJs, the assets/image pipeline, pageActions, mcp, and the plugins/i18n/blog/variables/docbox/coldbox/cloud keys. Use this whenever a user asks what a bxsites.yaml/.toml key does, how to set the site's base URL/sub-path, how to customize the nav, or wants to tune the responsive-image/asset-bundling pipeline. For themes, search providers, and deployment/publish config, use bx-sites-themes/bx-sites-search/bx-sites-deployment instead; for docbox/coldbox and mcp/AI-agent-skills detail, use bx-sites-api-docs/bx-sites-ai-features.
+description: Full bxsites.yaml/bxsites.toml/bxsites.json key reference for a bx-sites (ortus-boxlang/bx-sites) project - baseURL, source, exclude, robots.txt, nav, redirects, markdown options, repo/social/footer, lastUpdated, analytics, ogImage/generateOgImages, extraCss/extraJs, the assets/image pipeline, pageActions, mcp, and the plugins/i18n/blog/variables/docbox/coldbox/cloud keys. Use this whenever a user asks what a bxsites.yaml/.toml key does, how to set the site's base URL/sub-path, how to customize the nav, or wants to tune the responsive-image/asset-bundling pipeline. For themes, search providers, and deployment/publish config, use bx-sites-themes/bx-sites-search/bx-sites-deployment instead; for docbox/coldbox and mcp/AI-agent-skills detail, use bx-sites-api-docs/bx-sites-ai-features.
 ---
 
 # BxSites Configuration Reference
@@ -19,6 +19,8 @@ merges one level deep (`{theme: {name: material}}` keeps the default empty
 name: "My Docs"
 description: ""
 baseURL: "/"
+source: docs
+exclude: []
 theme:
   name: bootstrap
   options: {}
@@ -100,6 +102,27 @@ the canonical URL for `sitemap.xml`/`robots.txt`/`llms.txt`/canonical tags.
 
 `llms.txt` is always written regardless (absolute URLs when `baseURL`
 provides them, `basePath`-relative otherwise).
+
+## `source`
+
+Which folder holds the project's content - `docs`, `src`, any custom folder
+name, or `.` (whole repo is the content, no subfolder). Unset (default) -
+`docs/` then `src/` auto-detected; if neither exists on disk **and**
+`source` is unset, resolving throws `BxSites.SourceNotConfigured` instead of
+guessing. `bxSites new` always writes an explicit `source:`. `.theme`/
+`.themes/<name>` theme overrides (see `bx-sites-themes`) live inside this
+resolved content root, not the bare project root - important for a
+multi-domain monorepo where several project roots share one repo.
+
+## `exclude`
+
+`[]` default - extra file/folder names to leave out of the content scan, on
+top of bx-sites' always-applied excludes (`.git`, `.github`, `node_modules`,
+`boxlang_modules`, `site`, `.theme`, `.themes`, and the project's own config
+file name). Matched by bare name anywhere under `source`. Deliberately does
+**not** auto-exclude `README.md`/`LICENSE.md`/`CHANGELOG.md` - a project can
+have a real content page at that name; a `source: .` project not wanting its
+root README/LICENSE/CHANGELOG published opts out via `exclude` instead.
 
 ## `robots.txt`
 

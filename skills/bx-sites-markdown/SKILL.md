@@ -202,7 +202,7 @@ layout: press-release
 ---
 ```
 
-Renders through `theme/press-release.bxm` (or the active built-in theme's
+Renders through `.theme/press-release.bxm` (or the active built-in theme's
 own, if it ships one) - still inside the site's normal `layout.bxm` shell. A
 `layout:` naming a file the active theme doesn't have falls back to
 `page.bxm` rather than failing the build. Unset (the default) keeps a page

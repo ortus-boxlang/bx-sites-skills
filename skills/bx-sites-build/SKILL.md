@@ -68,7 +68,7 @@ A one-shot environment/config health check - the "run this before filing a
 bug report" verb. Checks the JVM version, that `docs/` exists, that
 `bxsites.yaml`/`.json` actually parses and validates, that the required
 BoxLang modules (`bx-markdown`, `bx-esapi`, `bx-yaml`, `bx-image`) are
-installed and activated, and - if a project-level `theme/` override exists
+installed and activated, and - if a project-level `.theme/` override exists
 - that it satisfies the `layout.bxm`/`page.bxm` contract (see
 `bx-sites-themes`). Exits `1` if any check fails, `0` otherwise. Nothing
 here mutates a project.

@@ -55,9 +55,10 @@ theme: { name: material }
 bxSites install:theme --name=bx-sites-theme-blog1 [--version=1.0.0]
 ```
 
-Downloads from ForgeBox into `themes/bx-sites-theme-blog1/` at the project
-root, validating the `ThemeProvider` contract before finishing (a broken
-package fails at install time, not at the next `build`). No separate
+Downloads from ForgeBox into `<contentRoot>/.themes/bx-sites-theme-blog1/`
+(inside the project's resolved content root, not the bare project root - see
+"Resolution order" below), validating the `ThemeProvider` contract before
+finishing (a broken package fails at install time, not at the next `build`). No separate
 activation step (unlike a plugin - see `bx-sites-plugins`) - just set
 `theme.name` to match. Browse published themes under ForgeBox's
 `bxsites-themes` category.
@@ -112,8 +113,14 @@ A theme folder missing either required file fails fast with
 `BxSites.InvalidTheme` at build time. `blog.bxm`/`blog-page.bxm` are never
 enforced - same "optional, falls back" shape `search.bxm` already has.
 
-**Resolution order**: project `theme/` override → installed
-`themes/<name>/` matching `theme.name` → a built-in theme named `theme.name`.
+Both override locations below live inside the project's *resolved content
+root* (`docs/`, `src/`, a custom `source:`, or the project root itself for
+`source: .`) - not the bare project root. See `bx-sites-configuration` for
+how `source`/`exclude` resolve that root.
+
+**Resolution order**: `<contentRoot>/.theme/` override → installed
+`<contentRoot>/.themes/<name>/` matching `theme.name` → a built-in theme
+named `theme.name`.
 
 ## Multiple layouts per page
 
@@ -137,7 +144,7 @@ layout: press-release
 ```
 
 `layout: press-release` renders this one page's body through
-`theme/press-release.bxm` (or the active built-in theme's, if it has one)
+`.theme/press-release.bxm` (or the active built-in theme's, if it has one)
 instead of `page.bxm` - still inside the site's normal `layout.bxm` shell. A
 `layout:` naming a file the active theme doesn't have falls back to
 `page.bxm` rather than failing the build, so switching themes never breaks a
@@ -145,7 +152,7 @@ page that named one theme's own custom layout.
 
 `bootstrap` ships `blog.bxm`/`blog-page.bxm` as a working example to copy;
 the other built-in themes don't yet, and fall back to `layout.bxm`/`page.bxm`
-for blog content the same way any incomplete `theme/` override would.
+for blog content the same way any incomplete `.theme/` override would.
 
 ### Which layout/body is active
 
@@ -163,11 +170,11 @@ actually resolved, the same bare way it already reads `variables.page`/
 
 Useful for a body class hook, or branching without a separate template:
 
-```bx title="theme/layout.bxm"
+```bx title=".theme/layout.bxm"
 <body class="layout-#reReplace( variables.bodyFile, '\.bxm$', '' )#">
 ```
 
-```bx title="theme/page.bxm"
+```bx title=".theme/page.bxm"
 <bx:if variables.bodyFile == "blog-page.bxm">
 	<!-- blog-post-only chrome -->
 </bx:if>
@@ -213,17 +220,19 @@ real names first. Anything beyond color/font needs a real override.
 ## Overriding a theme
 
 Drop `layout.bxm` + `page.bxm` (and optionally `search.bxm`/`assets/`) into
-a `theme/` folder at the project root - the built-in themes under this
-module's `resources/themes/` are good starting points to copy:
+a `.theme/` folder inside the project's resolved content root (`docs/.theme/`,
+`src/.theme/`, or wherever `source:` points - see `bx-sites-configuration`)
+- the built-in themes under this module's `resources/themes/` are good
+starting points to copy:
 
 ```bash
 bxSites theme:new --theme=bootstrap
 ```
 
 then edit only what's needed - e.g. swap the brand palette/font in
-`theme/assets/style.css`. `bxSites build`/`serve` pick up `theme/`
+`.theme/assets/style.css`. `bxSites build`/`serve` pick up `.theme/`
 automatically, no config change needed - it takes precedence over
-`theme.name` entirely. **All-or-nothing**: once a project `theme/` exists it
+`theme.name` entirely. **All-or-nothing**: once a project `.theme/` exists it
 needs its own `layout.bxm` + `page.bxm` even for a CSS-only change (missing
 either fails with `BxSites.InvalidTheme`) - for CSS-only, prefer `extraCss`
 above instead.
@@ -232,8 +241,8 @@ above instead.
 
 The absolute minimum - no Bootstrap/Tailwind, no dark mode, no search UI:
 
-```bx title="theme/layout.bxm"
-<!-- theme/layout.bxm -->
+```bx title=".theme/layout.bxm"
+<!-- .theme/layout.bxm -->
 <bx:script>
 	function renderNav( required array nodes ) {
 		var html = "<ul>"
@@ -271,8 +280,8 @@ The absolute minimum - no Bootstrap/Tailwind, no dark mode, no search UI:
 </bx:output>
 ```
 
-```bx title="theme/page.bxm"
-<!-- theme/page.bxm -->
+```bx title=".theme/page.bxm"
+<!-- .theme/page.bxm -->
 <bx:output>
 <article>
 	<h1>#encodeForHTML( variables.page.title )#</h1>
@@ -290,8 +299,8 @@ built-in `search.bxm` is only included when `search: true`).
 The example above hardcodes `page.bxm`, which is fine for a minimal theme -
 swap that line for `<bx:include template="#variables.themeDir#/#variables.bodyFile#">`
 (a built-in theme's own `layout.bxm` already does) to opt into "Multiple
-layouts per page" above, so a project can add its own `theme/blog-page.bxm`
-or `theme/<name>.bxm` frontmatter override later without touching
+layouts per page" above, so a project can add its own `.theme/blog-page.bxm`
+or `.theme/<name>.bxm` frontmatter override later without touching
 `layout.bxm` again.
 
 ## Importing a theme from another SSG
@@ -301,9 +310,9 @@ bxSites theme:import --source=mkdocs --path=/path/to/theme --name=my-imported-th
 ```
 
 `--source` is `mkdocs`, `jekyll`, or `hugo`. Best-effort conversion into a
-`themes/<name>/` scaffold - a starting point, not lossless. Safe to re-run
-against the same `--name` (`.bxm` files overwritten, new asset folders
-merged in).
+`<contentRoot>/.themes/<name>/` scaffold - a starting point, not lossless.
+Safe to re-run against the same `--name` (`.bxm` files overwritten, new asset
+folders merged in).
 
 ## Homepage hero banner
 
