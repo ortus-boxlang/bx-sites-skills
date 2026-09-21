@@ -24,6 +24,14 @@ Primary workflows in bx-sites:
 | Release | `.github/workflows/release.yml` | Stable release and version/tag flow |
 | Docbox | `.github/workflows/docbox.yml` | API docs generation and publishing |
 | Publish Docs | `.github/workflows/pages.yml` | Multi-theme site build + Pages deploy |
+| Gradle Plugin CI | `.github/workflows/gradle-plugin-ci.yml` | Builds/tests the Gradle plugin (`gradle-plugin/`) |
+| Gradle Plugin Release | `.github/workflows/gradle-plugin-release.yml` | Publishes the Gradle plugin |
+| Maven Plugin CI | `.github/workflows/maven-plugin-ci.yml` | Builds/tests the Maven plugin (`maven-plugin/`) |
+| Maven Plugin Release | `.github/workflows/maven-plugin-release.yml` | Publishes the Maven plugin |
+
+The two plugin CI/release pairs are independent of the module's own
+`tests.yml`/`release.yml` flow - a failing plugin job is usually a JDK 21 /
+Gradle-and-Maven-only concern, not a bx-sites runtime regression.
 
 ## Required troubleshooting flow
 

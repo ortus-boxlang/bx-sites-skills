@@ -2,7 +2,7 @@
 name: bx-sites-themes
 metadata:
   version: "1.0"
-description: Choose, customize, override, install, or write a theme for a bx-sites (ortus-boxlang/bx-sites) site - the 10 built-in themes, air-gapped/offline considerations, the ThemeProvider contract (layout.bxm/page.bxm), color-only customization via extraCss, ejecting/overriding a theme, writing one from scratch, installing a published theme from ForgeBox, importing an mkdocs/jekyll/hugo theme, and the homepage hero banner. Use this whenever a user wants to change a bx-sites site's look, brand colors, or write/override its templates.
+description: Choose, customize, override, install, or write a theme for a bx-sites (ortus-boxlang/bx-sites) site - the 10 built-in themes, air-gapped/offline considerations, the ThemeProvider contract (layout.bxm/page.bxm, plus optional search.bxm/blog.bxm/blog-page.bxm and any frontmatter-named layout), the layout: frontmatter key (outer shell + body), bootstrap's marketing homepage (home.bxm), color-only customization via extraCss, ejecting/overriding a theme, writing one from scratch, installing a published theme from ForgeBox, importing an mkdocs/jekyll/hugo theme, and the homepage hero banner. Use this whenever a user wants to change a bx-sites site's look, brand colors, or write/override its templates.
 ---
 
 # BxSites Themes Reference
@@ -101,6 +101,10 @@ A theme is a folder with:
   post, rendered under the theme's normal `layout.bxm`. Falls back to
   `page.bxm` when a theme doesn't have it.
 - **`assets/`** (optional) - theme CSS/JS, copied to `site/assets/theme/`.
+- **`<name>.bxm`** (optional) - any extra template a page can opt into by
+  frontmatter `layout: <name>` - `home.bxm` is the built-in example (see
+  "Multiple layouts per page" below). Not enforced; a name no theme file
+  matches simply falls back.
 
 Also available: `variables.page.editUrl`/`.lastUpdated` (empty strings if
 unconfigured), `variables.siteConfig.repo`/`.social`/`.footer`,
@@ -129,9 +133,9 @@ letting a blog (or any other content type) look different from the rest of
 the site while reusing the same theme's chrome/assets. Two independent
 resolution chains:
 
-- **Outer shell** - always `layout.bxm`, except the blog's own listing/
-  category/archive/author/stats pages, which use `blog.bxm` when the active
-  theme has it. Not controllable per-page; it follows content type.
+- **Outer shell** - `layout.bxm`, except the blog's own listing/category/
+  archive/author/stats pages, which use `blog.bxm` when the active theme has
+  it. A page's own frontmatter wins here too (see below).
 - **Body** - `page.bxm` by default. A blog post uses `blog-page.bxm` when the
   active theme has it. Either way, a page's own frontmatter always wins when
   set:
@@ -143,16 +147,40 @@ layout: press-release
 ---
 ```
 
-`layout: press-release` renders this one page's body through
-`.theme/press-release.bxm` (or the active built-in theme's, if it has one)
-instead of `page.bxm` - still inside the site's normal `layout.bxm` shell. A
-`layout:` naming a file the active theme doesn't have falls back to
-`page.bxm` rather than failing the build, so switching themes never breaks a
-page that named one theme's own custom layout.
+`layout: press-release` resolves **both** slots: this one page renders
+through `.theme/press-release.bxm` (or the active built-in theme's, if it has
+one) as its outer shell *and* as its body. A `layout:` naming a file the
+active theme doesn't have falls back to `layout.bxm`/`page.bxm` rather than
+failing the build, so switching themes never breaks a page that named one
+theme's own custom layout.
 
-`bootstrap` ships `blog.bxm`/`blog-page.bxm` as a working example to copy;
-the other built-in themes don't yet, and fall back to `layout.bxm`/`page.bxm`
-for blog content the same way any incomplete `.theme/` override would.
+```markdown title="docs/index.md - an alternate outer shell for one page"
+---
+title: BxSites
+layout: home
+---
+```
+
+That's how a marketing homepage works: `bootstrap` ships a `home.bxm` that
+is **not** a derivative of `layout.bxm` - no sidebar, no TOC rail, a
+horizontal marketing nav instead of the docs hamburger - and it never
+includes `#variables.bodyFile#`, so the whole page is hardcoded in the
+template and that page's own Markdown body goes unused while it renders.
+Drop `layout: home` and the page falls straight back to the normal
+`layout.bxm`/`page.bxm` rendering, body included.
+
+So a frontmatter `layout:` is all-or-nothing across both slots: the named
+template has to be a complete outer shell that renders everything itself,
+which is exactly why `home.bxm` never includes `#variables.bodyFile#`
+(including it there would include itself). Body-only alternates are the ones
+a theme ships per content type - `blog-page.bxm` for a post, rendered under
+the normal `layout.bxm`. For a custom body inside the usual shell, branch
+inside `page.bxm` on `variables.bodyFile` instead (below).
+
+`bootstrap` ships `blog.bxm`/`blog-page.bxm` (and `home.bxm`) as working
+examples to copy; the other built-in themes don't yet, and fall back to
+`layout.bxm`/`page.bxm` for blog content the same way any incomplete
+`.theme/` override would.
 
 ### Which layout/body is active
 
@@ -161,8 +189,8 @@ Every `.bxm` a page renders through - `layout.bxm`, `page.bxm`, `blog.bxm`,
 actually resolved, the same bare way it already reads `variables.page`/
 `variables.data`:
 
-- `variables.layoutFile` - the outer shell in use, e.g. `"layout.bxm"` or
-  `"blog.bxm"`
+- `variables.layoutFile` - the outer shell in use, e.g. `"layout.bxm"`,
+  `"blog.bxm"`, or a frontmatter-named one like `"home.bxm"`
 - `variables.bodyFile` - the body in use, e.g. `"page.bxm"`,
   `"blog-page.bxm"`, or a frontmatter-named one
 - `variables.page.layout` - the page's own raw frontmatter `layout:` value,
@@ -328,3 +356,15 @@ drop in, using CSS every built-in theme already ships:
 	</div>
 </div>
 ```
+
+`bxsites-hero__btn--primary`/`--secondary` are the same two accent styles
+every theme already uses elsewhere - swap, drop, or add buttons freely, and
+resize/replace the banner's own image via a `docs/assets/`-relative `src`
+the same way any other image resolves.
+
+A homepage that needs more than a banner - hero plus feature grids, a
+comparison table, an ecosystem strip, a richer footer - is a full alternate
+outer shell instead: name one in frontmatter (`layout: home`) and copy
+`bootstrap`'s `home.bxm` as the starting point, per "Multiple layouts per
+page" above. The two compose - `home.bxm` uses these same `bxsites-hero*`
+classes.

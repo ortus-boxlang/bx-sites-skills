@@ -2,13 +2,14 @@
 name: bx-sites-blog-versioning-i18n
 metadata:
   version: "1.0"
-description: Set up and write a blog, versioned docs, translated (i18n) locales, and numbered courses in bx-sites (ortus-boxlang/bx-sites) - docs/blog/posts frontmatter and authors.yml, post:new, categories/archives/RSS, docs/versions/<name> and version:new, docs/i18n/<code> and i18n:new, composing versions with locales, theme-chrome translation strings, redirects (frontmatter redirect_from and bxsites.yaml's redirects), and docs/data/courses.yaml with per-lesson progress tracking. Use this whenever a user wants to add a blog post, cut a new docs version, add a translated locale, keep an old URL working after a page moves, or turn a set of pages into a guided lesson-by-lesson course. For the ::: course ::: index block itself, see bx-sites-content-blocks.
+description: Set up and write a blog, versioned docs, translated (i18n) locales, and numbered courses in bx-sites (ortus-boxlang/bx-sites) - docs/blog/posts frontmatter and authors.yml, post:new, categories/archives/RSS, docs/versions/<name> and version:new, bxsites.yaml's versions.default (publish a version at the site root, docs/ at /next/), docs/i18n/<code> and i18n:new, composing versions with locales, theme-chrome translation strings, redirects (frontmatter redirect_from and bxsites.yaml's redirects), and docs/data/courses.yaml with per-lesson progress tracking. Use this whenever a user wants to add a blog post, cut a new docs version, add a translated locale, keep an old URL working after a page moves, or turn a set of pages into a guided lesson-by-lesson course. For the ::: course ::: index block itself, see bx-sites-content-blocks.
 ---
 
 # BxSites Blog, Versioning, i18n, Courses & Redirects
 
 All of these are **convention over configuration** - no `bxsites.yaml` key
-turns them on, just a folder (or a data file, for courses).
+turns them on, just a folder (or a data file, for courses). The only config
+involved is tuning: `blog.*`, `i18n.*`, and `versions.default`.
 
 ## Blog
 
@@ -171,6 +172,34 @@ Version names sort **newest-first, numerically** (`2.0` before `10.0`);
 every theme renders a version-switcher automatically once more than one
 version exists. `sitemap.xml`/`llms.txt` include every version.
 
+### Publishing a version at the site root
+
+One config key changes which tree owns the root - `bxsites.yaml`'s
+`versions.default` (see `bx-sites-configuration`):
+
+```yaml title="bxsites.yaml"
+versions:
+  default: "1.0.x"
+```
+
+Names a `docs/versions/<name>/` folder to build at the site root (`/`)
+instead of `/versions/<name>/` - never both. The plain `docs/` tree then
+builds separately at **`/next/`**: still fully browsable and linkable, with
+its own search index and tags page. The switcher shows `1.0.x` selected at
+the root, a `Next` entry pointing at `/next/`, then every other version.
+`/next/` pages are excluded from `sitemap.xml`, and `robots.txt` gains a
+`Disallow: /next/` line.
+
+A value that doesn't match any discovered version folder fails the build
+with `BxSites.UnknownDefaultVersion` - it never falls back silently. Patch
+releases are just in-place edits to the version folder (no new cut, no
+config change); only a minor/major bump warrants `version:new` plus moving
+`versions.default`.
+
+**Limitation**: `/next/` gets no locale sub-trees - `docs/i18n/<code>/`
+keeps translating `docs/`, but only the default-locale build publishes under
+`/next/`.
+
 **Out of scope**: search is scoped per-tree (separate `search-index.json`
 per version) except with the `pagefind` provider, which indexes the whole
 built site (see `bx-sites-search`); no deprecated/EOL flag or custom label -
@@ -218,7 +247,10 @@ i18n:
 
 `defaultLocale` only needs setting if the default isn't English. A folder
 with no matching `locales` entry still builds (using its bare code as
-label) - `locales` supplies display metadata, not the on/off switch.
+label) - `locales` supplies display metadata, not the on/off switch. `flag`
+is an optional emoji override - most common codes already resolve to a
+sensible flag on their own (region code first, `pt-BR`, then base language,
+`pt`), falling back to a plain 🌐.
 
 `bxSites i18n:status` reports per-locale translation coverage (which pages
 exist at the same relative path for each locale) - always exits `0`,
@@ -238,8 +270,8 @@ version's own default locale; switching locale always stays on the current
 version.
 
 **Theme chrome (UI strings)** - the surrounding UI text (search placeholder,
-"On this page," 404 page, etc.) translates per locale too. `de`/`es`/`it`/
-`ja` ship a built-in translation; any other code falls back to English.
+"On this page," 404 page, etc.) translates per locale too. `de`/`es`/`it`
+ship a built-in translation; any other code falls back to English.
 Override specific keys per locale:
 
 ```yaml title="bxsites.yaml"

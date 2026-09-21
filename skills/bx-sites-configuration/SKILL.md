@@ -2,7 +2,7 @@
 name: bx-sites-configuration
 metadata:
   version: "1.0"
-description: Full bxsites.yaml/bxsites.toml/bxsites.json key reference for a bx-sites (ortus-boxlang/bx-sites) project - baseURL, source, exclude, robots.txt, nav, redirects, markdown options, repo/social/footer, lastUpdated, analytics, ogImage/generateOgImages, extraCss/extraJs, the assets/image pipeline, pageActions, mcp, and the plugins/i18n/blog/variables/docbox/coldbox/cloud keys. Use this whenever a user asks what a bxsites.yaml/.toml key does, how to set the site's base URL/sub-path, how to customize the nav, or wants to tune the responsive-image/asset-bundling pipeline. For themes, search providers, and deployment/publish config, use bx-sites-themes/bx-sites-search/bx-sites-deployment instead; for docbox/coldbox and mcp/AI-agent-skills detail, use bx-sites-api-docs/bx-sites-ai-features.
+description: Full bxsites.yaml/bxsites.toml/bxsites.json key reference for a bx-sites (ortus-boxlang/bx-sites) project - baseURL, source, exclude, robots.txt, nav, redirects, markdown options, repo/social/footer, lastUpdated, analytics, ogImage/generateOgImages, extraCss/extraJs, the assets/image pipeline, pageActions, mermaid/math/openapi/imageGallery, versions.default, mcp, and the plugins/i18n/blog/variables/docbox/coldbox/cloud keys. Use this whenever a user asks what a bxsites.yaml/.toml key does, how to set the site's base URL/sub-path, how to customize the nav, or wants to tune the responsive-image/asset-bundling pipeline. For themes, search providers, and deployment/publish config, use bx-sites-themes/bx-sites-search/bx-sites-deployment instead; for docbox/coldbox and mcp/AI-agent-skills detail, use bx-sites-api-docs/bx-sites-ai-features.
 ---
 
 # BxSites Configuration Reference
@@ -33,14 +33,18 @@ searchProvider:
 nav: []
 markdown:
   enableAdmonition: true
+redirects: []
 repo:
   url: ""
   editUri: ""
 social: []
 footer: false
 lastUpdated: false
+robots: true
 mermaid: false
 math: false
+openapi: false
+imageGallery: false
 analytics:
   provider: ""
   id: ""
@@ -52,6 +56,7 @@ assets:
   fingerprint: true
   bundle: true
   images: { enabled: true, widths: [400, 800, 1200, 1600], formats: [original, webp] }
+pageActions: false
 plugins: []
 i18n:
   defaultLocale: { code: en, label: English }
@@ -59,7 +64,11 @@ i18n:
 blog:
   postsPerPage: 10
   feed: true
+  feedLimit: 25
+versions:
+  default: ""
 variables: {}
+cloud: { siteId: "", apiUrl: "" }
 ```
 
 All three formats use the identical key names/shapes - only the syntax
@@ -155,6 +164,17 @@ control** (the site is still fully reachable by URL - see
   `"top"` for the edit-page/download-markdown/last-updated row
 - `theme.options.pageActionsPosition` - `"top"` (default) or `"bottom"` for
   the [`pageActions`](#pageactions) dropdown
+- `theme.options.breadcrumbs` - `true` (default) renders the
+  "Guides > Setup" trail above a page's own title whenever it's nested more
+  than one level deep; `false` turns breadcrumbs off site-wide
+- `theme.options.accentColor` / `theme.options.accentColorDark` - a 3- or
+  6-digit hex (e.g. `"#2563eb"`) overriding the theme's interactive/accent
+  color (links, active nav items, focus states) for light / dark mode
+  respectively. Either can be set alone - an unset one keeps that mode on the
+  theme's own native accent. Site-wide and build-time; there's no
+  visitor-facing UI to change them, and no effect on a theme that ignores
+  them - for palette work across every theme, use `extraCss` instead (see
+  `bx-sites-themes`)
 
 ## `search` / `searchProvider`
 
@@ -280,8 +300,11 @@ The image-resizing/bundling pipeline, on by default with sane settings -
 usually nothing to touch.
 
 - `assets.fingerprint` (`true`) - content-hash names generated variants/
-  bundles for safe far-future caching; never renames a project's own
-  originals under `docs/assets/`.
+  bundles **and the active theme's own `assets/style.css`** for safe
+  far-future caching, so a theme update busts every visitor's cache on the
+  next deploy with no manual versioning; never renames a project's own
+  originals under `docs/assets/` (so `::: file` cards and plain-filename
+  links keep working).
 - `assets.bundle` (`true`) - concatenates `extraCss`/`extraJs` into one
   fingerprinted file each (pure BoxLang/JVM, no Node toolchain).
 - `assets.images.enabled` (`true`) - resize/WebP + `<picture>` rewrite for
@@ -290,11 +313,21 @@ usually nothing to touch.
   at/above an image's own is skipped (never upscaled).
 - `assets.images.formats` (`["original", "webp"]`).
 
-## `mermaid` / `math` / `openapi`
+## `mermaid` / `math` / `openapi` / `imageGallery`
 
 All `false` by default - `true` loads the client-side library (Mermaid/
-KaTeX/Swagger UI) and activates the corresponding Markdown syntax. See
-`bx-sites-markdown` and `bx-sites-content-blocks` for the syntax itself.
+KaTeX/Swagger UI/lightbox) and activates the corresponding Markdown
+syntax. See `bx-sites-markdown` and `bx-sites-content-blocks` for the
+syntax itself.
+
+- `mermaid: true` renders ` ```mermaid ` fenced blocks as diagrams.
+- `math: true` typesets `$inline$`/`$$block$$` with KaTeX.
+- `openapi: true` renders every `::: openapi src="..."` block as an
+  interactive Swagger UI widget; unset, the placeholder renders but stays
+  inert and ships no extra JS/CSS.
+- `imageGallery: true` loads a small click-to-enlarge lightbox for every
+  `::: image-gallery` block; unset, the grid still renders, just without the
+  lightbox's JS.
 
 ## `pageActions`
 
@@ -330,8 +363,23 @@ optional; see `bx-sites-api-docs` for the full schema and generated output.
 site in bxSites Cloud. Both default to `""`; only `publish` needs this
 block. The API token never lives here - see `bx-sites-deployment`.
 
+## `versions`
+
+`versions.default: ""` (the default) - the plain `docs/` tree builds at the
+site root, as always. Set it to a `docs/versions/<name>/` folder's own name
+and **that** version builds at the site root instead, with `docs/` itself
+building separately at `/next/` (still fully browsable, own search index,
+excluded from `sitemap.xml`, and `robots.txt` gains a `Disallow: /next/`
+line). A value that doesn't match any discovered version folder throws
+`BxSites.UnknownDefaultVersion` - it never falls back silently. Creating a
+version is still convention-only (`docs/versions/<name>/`, or
+`bxSites version:new`) - see `bx-sites-blog-versioning-i18n`.
+
 ## `i18n` / `blog` / `variables`
 
 See the `bx-sites-blog-versioning-i18n` and `bx-sites-variables-functions`
 skills for the full picture - these keys are metadata/tuning for
-content-authoring features, not build/deploy concerns.
+content-authoring features, not build/deploy concerns. `i18n` also carries
+each locale's `dir` (`"ltr"`/`"rtl"`), an optional `flag` emoji override, and
+a `strings` map overriding that locale's theme-chrome UI text; `blog` also
+carries `feedLimit` (default `25`, `0` = uncapped).
