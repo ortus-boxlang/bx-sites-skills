@@ -49,7 +49,7 @@ keep the value locale-neutral.
 
 Add `docs/functions.bxs` (or `src/functions.bxs`) - a plain BoxLang script.
 Any function named with a leading `$` becomes callable from `{{ }}` in
-Markdown, and bare (no `$`) from a project `theme/` `.bxm` override (see
+Markdown, and bare (no `$`) from a project `.theme/` `.bxm` override (see
 `bx-sites-themes`):
 
 ```bx title="docs/functions.bxs"
@@ -75,9 +75,9 @@ returning real HTML works exactly as expected. A function without a leading
 `{{ }}` can never call it directly.
 
 **Calling from a theme override** - a magic function is bound directly into
-template scope, so `theme/page.bxm`/`layout.bxm` can call it bare:
+template scope, so `.theme/page.bxm`/`layout.bxm` can call it bare:
 
-```bx title="theme/page.bxm"
+```bx title=".theme/page.bxm"
 <p class="build-banner">#$shout( 'built with boxlang' )#</p>
 ```
 

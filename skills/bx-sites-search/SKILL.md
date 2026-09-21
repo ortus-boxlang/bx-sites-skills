@@ -121,12 +121,13 @@ override (see `bx-sites-themes`):
      meilisearch: { host: https://my-project.meilisearch.io, apiKey: "...", indexName: my-docs }
    ```
 2. **Eject a theme** - `bxSites theme:new --theme=bootstrap` copies the
-   built-in theme into project `theme/` (project-theme-wins resolution).
-3. **Add the mount point** in `theme/search.bxm` - it already branches on
+   built-in theme into the project's `.theme/` folder, inside the resolved
+   content root (project-theme-wins resolution - see `bx-sites-themes`).
+3. **Add the mount point** in `.theme/search.bxm` - it already branches on
    `variables.searchProviderName` for `local`/`algolia`/`pagefind`; add a
    branch: `<bx:if variables.searchProviderName eq 'meilisearch'><div
    id="bxsites-search-meilisearch"></div></bx:if>`.
-4. **Load the client and wire it up** in `theme/layout.bxm` - the existing
+4. **Load the client and wire it up** in `.theme/layout.bxm` - the existing
    Algolia block is a `<bx:if variables.searchEnabled and
    variables.searchProviderName eq 'algolia'>` guard; add the equivalent for
    the new provider's own widget, reading its config back out of

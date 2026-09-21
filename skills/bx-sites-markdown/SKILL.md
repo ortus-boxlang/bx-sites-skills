@@ -203,7 +203,7 @@ layout: press-release
 ```
 
 Resolves **both** the outer shell and the body - `layout: press-release`
-renders through `theme/press-release.bxm` (or the active built-in theme's
+renders through `.theme/press-release.bxm` (or the active built-in theme's
 own, if it ships one) as the whole page, not just inside the normal
 `layout.bxm` shell. `layout: home` is the built-in example: `bootstrap`'s
 `home.bxm` is a marketing homepage with no sidebar/TOC rail that never

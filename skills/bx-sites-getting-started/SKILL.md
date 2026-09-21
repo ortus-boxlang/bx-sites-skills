@@ -98,8 +98,8 @@ before committing.
 my-docs/
 ├── bxsites.yaml            # site config (.toml/.json also supported)
 ├── deployments/*.json      # deploy targets (see bx-sites-deployment)
-├── theme/                  # optional project theme override (see bx-sites-themes)
-└── docs/                   # or src/ - every .md file here is a page
+└── docs/                   # or src/, or wherever `source:` points - every .md file here is a page
+    ├── .theme/              # optional project theme override, inside the content root (see bx-sites-themes)
     ├── index.md
     ├── functions.bxs       # magic functions, see bx-sites-variables-functions
     ├── nav.json            # optional explicit nav (alternative to bxsites.yaml's nav key)
@@ -203,7 +203,7 @@ bxSites clean           # remove site/ and build cache
 
 `serve` builds, serves `site/` at `http://127.0.0.1:8080/` by default
 (`--port=`/`--host=` to change), and rebuilds automatically on any saved
-change under `docs/`, the site config, or a project `theme/` override - a
+change under `docs/`, the site config, or a project `.theme/` override - a
 native file watcher, only reconverting what changed, so it stays fast even
 on a large site. See `bx-sites-build` for `doctor`/`stats`/`audit` and a
 CI-grade pre-publish gate, and `bx-sites-deployment` for shipping the
