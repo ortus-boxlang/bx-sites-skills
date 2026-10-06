@@ -185,10 +185,17 @@ versions:
 Names a `docs/versions/<name>/` folder to build at the site root (`/`)
 instead of `/versions/<name>/` - never both. The plain `docs/` tree then
 builds separately at **`/next/`**: still fully browsable and linkable, with
-its own search index and tags page. The switcher shows `1.0.x` selected at
-the root, a `Next` entry pointing at `/next/`, then every other version.
-`/next/` pages are excluded from `sitemap.xml`, and `robots.txt` gains a
-`Disallow: /next/` line.
+its own search index and tags page. The switcher shows `1.0.x (Current)`
+selected at the root, then every other released version, then a divider
+and a `Next` entry pointing at `/next/` *last* - released versions first,
+the work-in-progress tree set apart at the bottom rather than squeezed in
+second. `/next/` pages are excluded from `sitemap.xml`, and `robots.txt`
+gains a `Disallow: /next/` line.
+
+Each switcher entry carries a `kind` (`"current"`/`"released"`/`"next"`)
+driving that grouping/labeling - `renderVersionSwitcher( variables.versions, variables.currentVersion )`
+(bound into every theme's render scope, built-in or custom) builds the
+whole thing; see `bx-sites-themes`.
 
 A value that doesn't match any discovered version folder fails the build
 with `BxSites.UnknownDefaultVersion` - it never falls back silently. Patch
