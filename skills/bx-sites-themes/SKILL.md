@@ -108,10 +108,26 @@ A theme is a folder with:
 
 Also available: `variables.page.editUrl`/`.lastUpdated` (empty strings if
 unconfigured), `variables.siteConfig.repo`/`.social`/`.footer`,
-`variables.versions` (`[ { label, url } ]`, "Latest" first) +
-`variables.currentVersion`, and a shared icon include
-(`<bx:include template="#variables.moduleAssetsDir#/icons.bxm">`, defines
-`bxsitesIcon( name )`).
+`variables.versions` (`[ { label, url, kind } ]`, "Latest" first,
+`kind` one of `"current"`/`"released"`/`"next"` - see
+`bx-sites-blog-versioning-i18n`) + `variables.currentVersion`, and a shared
+icon include (`<bx:include template="#variables.moduleAssetsDir#/icons.bxm">`,
+defines `bxsitesIcon( name )`).
+
+Two more helpers are bound into every theme's render scope (built-in or
+custom) the same way, no include needed:
+
+- `themeAssetUrl( "style.css" )` / `moduleAssetUrl( "copy-code.js" )` -
+  resolve a theme's own top-level `assets/` file (or one of this module's
+  shared scripts) to its basePath-prefixed, cache-busted URL. Use these
+  instead of a hardcoded `assets/theme/...`/`assets/...` path for anything
+  a layout links directly - only top-level files are fingerprinted, never
+  one in a subdirectory.
+- `renderVersionSwitcher( variables.versions, variables.currentVersion )` -
+  builds the whole version-switcher `<select>`, grouping a `"next"` entry
+  behind a divider after every released version and labeling `"current"`
+  with "(Current)" - a theme wanting its own styling passes an optional
+  third argument of extra CSS classes instead of reimplementing the markup.
 
 A theme folder missing either required file fails fast with
 `BxSites.InvalidTheme` at build time. `blog.bxm`/`blog-page.bxm` are never
@@ -293,7 +309,7 @@ The absolute minimum - no Bootstrap/Tailwind, no dark mode, no search UI:
 <head>
 	<meta charset="UTF-8">
 	<title>#encodeForHTML( variables.page.title )# - #encodeForHTML( variables.siteConfig.name )#</title>
-	<link rel="stylesheet" href="#variables.basePath#assets/theme/style.css">
+	<link rel="stylesheet" href="#themeAssetUrl( 'style.css' )#">
 </head>
 <body>
 	<header><a href="#variables.basePath#">#encodeForHTML( variables.siteConfig.name )#</a></header>
@@ -317,6 +333,13 @@ The absolute minimum - no Bootstrap/Tailwind, no dark mode, no search UI:
 </article>
 </bx:output>
 ```
+
+`themeAssetUrl( 'style.css' )` above (rather than a hardcoded
+`assets/theme/style.css`) is what makes a theme's own CSS/JS pick up
+content-hash cache-busting automatically - see `bx-sites-configuration`'s
+`assets.fingerprint`. It only fingerprints a file directly inside a
+theme's own `assets/`, never one in a subdirectory (a `@font-face`/`@import`
+dependency would break if renamed without rewriting what references it).
 
 `variables.page.contentHtml` is already fully converted (syntax
 highlighting, admonitions, tabs, math, all of it) - there's nothing left to
