@@ -8,8 +8,9 @@ description: Generate API reference pages inside a bx-sites (ortus-boxlang/bx-si
 # BxSites API Docs (DocBox & ColdBox)
 
 Two verbs turn real source code into ordinary Markdown pages under
-`docs/api/` - themed, searchable, and built/served exactly like any
-hand-written page, since that's literally what they become.
+`<content root>/api/` (the project's resolved content root: `docs/` by
+default, `src/` with `source: src`, ...) - themed, searchable, and built/served
+exactly like any hand-written page, since that's literally what they become.
 
 ## `bxSites docbox` - BoxLang/CFML class reference
 
@@ -29,7 +30,8 @@ bxSites build
 
 With no config, it documents whichever of `models`/`handlers`/`bifs`/
 `components`/`interceptors` your project actually has, writing pages under
-`docs/api/docbox/` - an overview index, one index per package, one page per
+`<content root>/<pagePathPrefix>` (default `api/docbox`, e.g. `src/api/docbox`
+when `source: src`) - an overview index, one index per package, one page per
 class (docblock, properties, functions grouped constructor/public/package/
 private, each with signature/hint/parameter table/`@return`).
 
@@ -48,10 +50,22 @@ Every key also has a one-run CLI override flag (`--mappings:models=models
 `bxsites.toml` works the same as `.yaml`/`.json` for this key (see
 `bx-sites-configuration`).
 
+Details:
+
+- `docbox.mappings` values are paths relative to the project root, or
+  absolute; both `.bx` and `.cfc` classes are scanned.
+- Default page tags are `[api, docbox]`; a CLI `--tags` wins over config.
+- Config is validated: `mappings` must be an object, `tags` an array, and
+  the other keys strings (`BxSites.InvalidConfig`).
+- Errors: `BxSites.DocBoxNotInstalled` (the `bx-docbox` module isn't in the
+  runtime - install it as above) and `BxSites.NoDocBoxSources` (no mappings
+  configured and none of the conventional folders exist - add
+  `docbox.mappings` or pass `--mappings:<name>=<path>`).
+
 **Deliberately doesn't**: link between classes (an `extends`/type name
 renders as plain inline code even when that class has its own page), show
 inherited members, or wire pages into `nav` for you - reference the
-generated `docs/api/docbox/index.md` from your own `nav`/`docs/nav.json`
+generated `api/docbox/index.md` (under the content root) from your own `nav`/`nav.json`
 (see `bx-sites-configuration`).
 
 DocBox's own JSON output skips `property` blocks, implemented interfaces,
@@ -69,7 +83,7 @@ Documents a [ColdBox](https://coldbox.ortusbooks.com) app purely from its
 conventions on disk - routes, handlers, models/WireBox mappings, modules,
 interceptors, scheduled tasks. **Never boots the app**: nothing compiles, no
 datasource needs to be reachable, no env var needs to be set, so it runs
-identically in CI and on a laptop.
+identically in CI and on a laptop. Both `.bx` and `.cfc` classes are scanned.
 
 ```bash
 bxSites coldbox            # from the app root
@@ -77,10 +91,13 @@ bxSites coldbox --appRoot=app   # app lives elsewhere
 bxSites build
 ```
 
-A resolved root with no `handlers/`, `config/ColdBox`, `config/Router`, or
-`modules_app/` fails with `BxSites.NotAColdBoxApp` rather than producing
-empty pages - check `--appRoot`/`coldbox.appRoot` first when that's the
-error.
+The resolved root counts as a ColdBox app only if `config/ColdBox` or
+`config/Router` exists (`.bx` or `.cfc`), or at least one handler class file
+exists, or at least one `modules_app/<m>/ModuleConfig` exists. Empty
+`handlers/` or `modules_app/` folders don't count. Otherwise it fails with
+`BxSites.NotAColdBoxApp` rather than producing empty pages - check
+`--appRoot`/`coldbox.appRoot` first when that's the error. `appRoot` (like
+`docbox.mappings`) is relative to the project root or absolute.
 
 ```yaml title="bxsites.yaml"
 coldbox:
@@ -93,10 +110,11 @@ coldbox:
 `include` decides which page sets get generated at all - drop a token to
 skip that set entirely. Same one-run override pattern as `docbox`
 (`--appRoot=app --include=routes,handlers --pagePathPrefix=reference
---tags=reference,api`).
+--tags=reference,api`). Default tags are `[api, coldbox]` (CLI `--tags` wins);
+config is validated like `docbox` (string keys, array `include`/`tags`).
 
 ```text
-docs/api/coldbox/
+<content root>/api/coldbox/   # i.e. <content root>/<pagePathPrefix>
 ├── index.md               # app overview and counts
 ├── routes.md              # every route, in declaration order
 ├── handlers/               # one page per handler; module handlers nest under their module
@@ -105,6 +123,11 @@ docs/api/coldbox/
 ├── interceptors.md
 └── scheduled-tasks.md
 ```
+
+`handlers/` and `models/` are written when included; `routes.md`,
+`modules/`, `interceptors.md` and `scheduled-tasks.md` only when there is
+something to write (routes found, modules present, interceptors declared,
+tasks found).
 
 - **Routes** preserve declaration order (ColdBox matches the first
   matching pattern), with `resources()`/`apiResources()` expanded into their
@@ -124,7 +147,9 @@ docs/api/coldbox/
 
 **Installing `bx-docbox` makes handler/model pages substantially richer**
 (per-method arguments and doc comments come from DocBox) - without it the
-verb still runs and lists everything, the pages just say what's missing.
+verb still runs and lists everything, the pages just say what's missing. If
+`bx-docbox` *is* installed but fails reading the app's classes, the pages and
+warnings show the real error instead of telling you to install it.
 
 **What it can't see** (purely static reading, stated plainly rather than
 silently guessed): a route/mapping/task whose pattern, target, or name is

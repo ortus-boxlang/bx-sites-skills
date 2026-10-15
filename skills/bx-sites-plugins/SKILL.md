@@ -42,10 +42,20 @@ Every method is optional - bx-sites checks for each before calling it.
 bxSites plugin:new --name=my-analytics-plugin [--dest=]
 ```
 
-scaffolds `box.json`, `ModuleConfig.bx`, and a fully-stubbed
-`models/BxSitesPlugin.bx` mirroring `examples/hello-plugin/` in the bx-sites
-repo (a complete, working reference implementation - adds an HTML comment to
-every page and appends a build summary via `onPageHtml`/`onBuildComplete`).
+scaffolds `box.json`, `ModuleConfig.bx`, and a `models/BxSitesPlugin.bx`
+whose stubs sit inside a commented-out `/* */` block - uncomment only the hooks
+you need. It stubs just five of the seven hooks (`onConfig`, `onPageMarkdown`,
+`onPageHtml`, `onNav`, `onBuildComplete`), not `onSearchIndex`/`onSitemap`, and
+its `onConfig` stub is declared `string function` - change it to
+`struct function` (the contract below). `examples/hello-plugin/` in the
+bx-sites repo is a working reference but implements only `onPageHtml` and
+`onBuildComplete`.
+
+`--dest` resolves against the project root (relative paths and `~/` work);
+the default is `<projectRoot>/<name>`. A non-empty destination fails with
+`BxSites.PluginDestExists`. The module name is the camelCase of the slugified
+name (`my-analytics-plugin` becomes `myAnalyticsPlugin`), and **that** is what
+goes in `plugins`, not the `--name` you typed.
 
 ```bx title="models/BxSitesPlugin.bx"
 class {
@@ -56,7 +66,9 @@ class {
 	}
 
 	string function onPageMarkdown( required string markdown, required struct page, required struct config ) {
-		// Mutate a page's raw markdown before conversion.
+		// Mutate a page's raw markdown body. Runs FIRST for each page, before
+		// ::: include expansion, {{ }} variable resolution, and tab/math/code/
+		// directive extraction - so you see unexpanded includes and {{ }} text.
 		return arguments.markdown
 	}
 
@@ -72,7 +84,7 @@ class {
 
 	array function onSearchIndex( required array entries, required struct config ) {
 		// Mutate search-index.json entries before it's written - each is
-		// { title, url, headings, body, tags }. Runs once per index actually
+		// { title, url, headings, body, tags, section, breadcrumb }. Runs once per index actually
 		// written (main + each version/locale tree using a local index).
 		return arguments.entries
 	}
@@ -101,13 +113,19 @@ must not depend on the order trees are built in.
 `docs/` altogether (e.g. a dynamically-served page a CLI-provider addon
 adds) that would otherwise be invisible to search/sitemap/`llms.txt`.
 
+The standalone `bxSites search-index` verb also loads plugins: it applies
+`onConfig`, and fires `onPageMarkdown`/`onPageHtml`/`onSearchIndex`, but not
+`onNav`/`onSitemap`. The dev server (`serve`) caches converted pages per source
+file, so the markdown/HTML hooks may not re-fire for files that haven't
+changed since the last rebuild (a config, theme, or plugin change clears the cache).
+
 ### Order of hook calls
 
 ```text
 onConfig(config)
   -> build the nav tree
 onNav(nav, config)
-  -> for every page: onPageMarkdown(markdown, page, config) -> Markdown() -> onPageHtml(html, page, config)
+  -> for every page: onPageMarkdown(markdown, page, config) -> includes, {{ }}, extraction -> Markdown() -> onPageHtml(html, page, config)
   -> write site/
 onSearchIndex(entries, config)
   -> write search-index.json
