@@ -14,9 +14,12 @@ involved is tuning: `blog.*`, `i18n.*`, and `versions.default`.
 ## Blog
 
 Drop posts under `docs/blog/posts/` and BxSites builds `/blog/` (paginated),
-a category page per category, a year-archive page per calendar year, an
-author page per author, RSS feeds, and `/blog/stats/` - zero config. A
-project with no `docs/blog/posts/` folder simply has no blog.
+a category page per category, a year-archive page per calendar year
+(`/blog/archive/<year>/`), an author page per author, RSS feeds, and
+`/blog/stats/` - zero config. A project with no `docs/blog/posts/` folder
+simply has no blog. Lists paginate via `blog.postsPerPage` (default `10`);
+later pages live at `.../page/2/`. Each post shows a reading time of
+words / 200 (minimum 1 minute).
 
 ### Scaffolding a post
 
@@ -24,7 +27,8 @@ project with no `docs/blog/posts/` folder simply has no blog.
 bxSites post:new --title="My New Post" [--slug=] [--date=] [--authors=] [--categories=] [--tags=] [--draft]
 ```
 
-`--draft` defaults `true`; pass `--!draft` to publish immediately.
+`--draft` defaults `true`; pass `--!draft` (or `--draft=false`) to publish
+immediately.
 
 ### Writing a post
 
@@ -51,7 +55,10 @@ The rest of the post - left out of the excerpt on /blog/ and category
 pages, still renders in full on the post's own page.
 ```
 
-- `date` (required) - sets sort order (newest first) and `<pubDate>`
+- `date` (required) - sets sort order (newest first) and `<pubDate>`. A
+  missing or invalid date fails the build with `BxSites.InvalidBlogPost`; two
+  posts resolving to the same slug fail with `BxSites.DuplicateBlogSlug`
+  (set an explicit `slug` on one).
 - `authors` - ids matching `docs/blog/authors.yml`, or a plain unlinked name
 - `categories` - taxonomy, each gets its own `/blog/category/<slug>/` page +
   feed. Unrelated to `tags`.
@@ -77,7 +84,9 @@ covers/author photos - not enforced, any `docs/assets/**` path works.
 ### Authors
 
 `docs/blog/authors.yml`, optional, one entry per id, referenced by a post's
-`authors` list:
+`authors` list. `authors.toml` and `authors.json` also work (first found in
+the order `.yml`, `.toml`, `.json` wins; `.yaml` is not recognized). A file
+that doesn't parse fails with `BxSites.InvalidBlogAuthors`:
 
 ```yaml title="docs/blog/authors.yml"
 lmajano:
@@ -102,7 +111,9 @@ automatically; an explicit `avatar` key always overrides it.
 A "Blog" nav entry is added automatically once there's at least one
 non-draft post (appended last by default). To place it explicitly (and
 suppress the auto entry), add your own `nav`/`docs/nav.json` entry with a
-bare `url` (bypasses the usual `path`-must-be-a-real-page rule):
+bare `url` (bypasses the usual `path`-must-be-a-real-page rule). The `url`
+must be exactly `blog/index.html` or the auto entry is still added. The auto
+entry only ever goes in the main tree's nav:
 
 ```yaml title="bxsites.yaml"
 nav:
@@ -120,6 +131,18 @@ requirement as `sitemap.xml`) and `blog.feed` isn't `false`. Each category
 also gets `/blog/category/<slug>/feed.xml`. Both capped to `blog.feedLimit`
 (default `25`; `0` = uncapped). Config lives in `bxsites.yaml`'s `blog` key
 - see `bx-sites-configuration`.
+
+### Finding posts and drafts
+
+`build` always skips drafts, so two read-only verbs surface them:
+
+```bash
+bxSites blog:drafts
+bxSites blog:find [--author=] [--category=] [--tag=] [--since=] [--until=] [--drafts]
+```
+
+`blog:find` filters are all optional (author/category/tag are
+case-insensitive exact matches; `--drafts` includes draft posts).
 
 ### Restyling the blog
 
@@ -168,7 +191,8 @@ the next release's docs. There's no "un-cut" verb; editing an already-cut
 version's pages is just editing the file directly - `page:new`/
 `page:rename`/`post:new` always target the main `docs/` tree only.
 
-Version names sort **newest-first, numerically** (`2.0` before `10.0`);
+Version names sort **newest-first, numerically** (`10.0` before `9.0` before
+`2.0`);
 every theme renders a version-switcher automatically once more than one
 version exists. `sitemap.xml`/`llms.txt` include every version.
 
@@ -203,9 +227,12 @@ releases are just in-place edits to the version folder (no new cut, no
 config change); only a minor/major bump warrants `version:new` plus moving
 `versions.default`.
 
-**Limitation**: `/next/` gets no locale sub-trees - `docs/i18n/<code>/`
-keeps translating `docs/`, but only the default-locale build publishes under
-`/next/`.
+**Limitation (current behavior)**: `/next/` gets no locale sub-trees, and
+with `versions.default` set the root locale sub-trees are built from
+`docs/versions/<default>/i18n/<code>/`, not `docs/i18n/<code>/` (which is not
+built at all then). `/next/`'s language switcher is still populated from
+`docs/i18n/*`, so it can link to `/next/<code>/` pages that are never
+generated. Keep translations under the default version's own `i18n/` folder.
 
 **Out of scope**: search is scoped per-tree (separate `search-index.json`
 per version) except with the `pagefind` provider, which indexes the whole
@@ -266,7 +293,10 @@ purely informational.
 **Untranslated pages** - a page missing from `docs/i18n/es/` still builds at
 its expected URL, showing the default locale's content with a "not
 translated yet" notice. Nothing 404s. Every locale's nav is always the exact
-same shape as the default's.
+same shape as the default's. The reverse is silently dropped: a translated
+page with no counterpart in the default tree is never built (a locale's
+output is exactly the default tree's pages, matched case-insensitively by
+relative path).
 
 **Language switcher** - appears automatically once more than one locale
 exists, no opt-in.
@@ -277,8 +307,10 @@ version's own default locale; switching locale always stays on the current
 version.
 
 **Theme chrome (UI strings)** - the surrounding UI text (search placeholder,
-"On this page," 404 page, etc.) translates per locale too. `de`/`es`/`it`
-ship a built-in translation; any other code falls back to English.
+"On this page," 404 page, etc.) translates per locale too. `de`/`es`/`it`/`ja`
+ship a built-in translation (`ja` has no `versionCurrent`, and no built-in
+locale translates the page-actions strings); any other code falls back to
+English.
 Override specific keys per locale:
 
 ```yaml title="bxsites.yaml"
@@ -291,11 +323,17 @@ i18n:
         onThisPage: Sur cette page
 ```
 
-Overridable keys: `searchPlaceholder`, `searchAriaLabel`, `searchNoResults`,
-`toggleDarkMode`, `toggleNavigation`, `toggleSection` (`{title}`),
-`repository`, `version`, `language` (`{label}`), `onThisPage`,
-`editThisPage`, `downloadMarkdown`, `lastUpdated`, `notTranslatedNotice`
-(`{locale}`), `notFoundTitle`, `notFoundBody`, `tagsTitle`, `pageNavigation`.
+Overridable keys (every key in `StringsResolver`'s defaults): `searchPlaceholder`,
+`searchAriaLabel`, `searchNoResults`, `toggleDarkMode`, `toggleNavigation`,
+`toggleSection` (`{title}`), `repository`, `version`, `versionCurrent`,
+`language` (`{label}`), `onThisPage`, `editThisPage`, `downloadMarkdown`,
+`lastUpdated`, `notTranslatedNotice` (`{locale}`), `notFoundTitle`,
+`notFoundBody`, `tagsTitle`, `pageNavigation`, `pagePrevious`, `pageNext`,
+`pageActionsButton`, `pageActionsAriaLabel`, plus the page-actions menu
+labels, each with a `...Hint` twin for its tooltip text: `copyPageMarkdown`,
+`viewAsMarkdown`, `copyPageLink`, `openInChatGPT`, `openInClaude`,
+`editOnGitHub`, `exportAsPdf`, `reportIssue`, `shareOnX`, `shareOnLinkedIn`,
+`shareOnFacebook`.
 
 **Out of scope**: blog chrome stays in English; `lastUpdated`'s date value
 isn't locale-formatted; RTL is baseline (mirrors layout, a few decorative
@@ -321,7 +359,7 @@ position *is* the lesson number:
 ```yaml title="docs/data/courses.yaml"
 getting-started:
   title: "Getting Started with BoxLang"
-  description: "A guided walkthrough from install to your first deployed site."
+  description: "A guided walkthrough from install to your first deployed site."  # optional
   lessons:
     - guides/course/introduction.md
     - guides/course/windows-installation.md
@@ -332,7 +370,8 @@ Each `lessons` entry is a `docs/`-relative path, same convention as
 `nav.json`. A lesson's title/summary come from *that page's own
 frontmatter* - never duplicated into the manifest, so renaming a page or
 editing its summary is reflected in the course index automatically.
-Multiple courses just means multiple top-level keys in the same file.
+Multiple courses just means multiple top-level keys in the same file. A
+`finalTest` key on a course is reserved for later and currently ignored.
 
 ### The index and lesson pages
 
@@ -342,9 +381,11 @@ a course whose lessons don't all exist, degrades to a visible note rather
 than failing the build.
 
 Every page listed in a course's `lessons` automatically gets a `course`
-context (`page.course` - see Context variables above) with its own
+context (`page.course` - see Context variables in
+`bx-sites-variables-functions`) with its own
 position, title, and *scoped* prev/next (`page.course.prevLesson`/
-`.nextLesson`) - unlike the site's global `page.prevPage`/`.nextPage`, which
+`.nextLesson`), plus `page.course.indexUrl` (the page that holds the
+course's `::: course` block) - unlike the site's global `page.prevPage`/`.nextPage`, which
 walks the whole nav tree regardless of any course. A lesson doesn't declare
 which course it's in - the manifest is the one source of truth, and the
 same lesson path listed under two different courses is a build error. The
@@ -414,16 +455,24 @@ redirects:
 ```
 
 `to` is a root-relative path (resolved against `baseURL`) or a full
-`https://` URL. Only applies to the main site tree.
+`https://` URL. Only applies to the main site tree: the `/next/` tree (see
+Versioning) gets page-level `redirect_from` only, never these.
 
 `bxSites page:rename --from=... --to=...` (see `bx-sites-getting-started`)
 stamps `redirect_from` automatically on top of rewriting every relative
 Markdown link that pointed at the old path - always prefer it over
-hand-moving a file.
+hand-moving a file. Details: links are rewritten across the whole content
+root, including `versions/**` and `i18n/**`; the moved file's own relative
+links are re-based to its new folder; `--from`/`--to` must end in `.md` and
+accept backslashes and a leading slash; repeated renames of the same page
+append to its `redirect_from` rather than replacing it.
 
-**Conflicts fail the build** rather than silently overwriting: a redirect's
-`from` colliding with a real page, or two redirects targeting the same
-`from`.
+**Conflicts fail the build** rather than silently overwriting
+(`BxSites.RedirectConflict`): a redirect's `from` colliding with a real page,
+two redirects targeting the same `from`, or a `from` whose output path
+already exists on disk (for example one that lands inside another tree such
+as a locale prefix). An empty `from`, or one that resolves outside the output
+directory, fails with `BxSites.InvalidRedirect`.
 
 **Out of scope**: blog posts don't get `redirect_from` (use a `redirects`
 config entry instead); no wildcard/pattern redirects - every `from` is one

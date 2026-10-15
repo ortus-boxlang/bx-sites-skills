@@ -7,12 +7,21 @@ description: Write advanced Markdown in bx-sites (ortus-boxlang/bx-sites) - admo
 
 # BxSites Markdown Extensions
 
-Beyond standard Markdown, bx-sites turns on admonitions, footnotes, and
-definition lists (Flexmark extensions via bx-markdown), plus its own content
-tabs, math, and fenced-code annotations. Configurable via `bxsites.yaml`'s
-`markdown`/`mermaid`/`math` keys - see the `bx-sites-configuration` skill
-for every key. Tables, `~~strikethrough~~`, `- [ ]` task lists and the
-in-page TOC are always on with no toggle.
+Beyond standard Markdown, bx-sites turns on admonitions by default (a
+Flexmark extension via bx-markdown); footnotes and definition lists are
+available but off until enabled (see their sections). It also has its own
+content tabs, math, and fenced-code annotations. Configurable via
+`bxsites.yaml`'s `markdown`/`mermaid`/`math` keys - see the
+`bx-sites-configuration` skill for every key, including the other
+`markdown.*` passthrough options (`anchorLinks`, `autoLinkUrls`,
+`enableYouTubeTransformer`, ...). Tables, `~~strikethrough~~`, `- [ ]` task
+lists and the in-page TOC are always on with no toggle.
+
+Order of operations on a page: `::: include` splicing, then `{{ }}`
+variables, then tabs, math, code annotations and `::: name` directives (see
+`bx-sites-variables-functions` and `bx-sites-content-blocks`). An unknown
+icon name or library never errors - it falls back to rendering the value as
+literal text.
 
 ## Admonitions
 
@@ -32,7 +41,7 @@ resolve to the same color):
 
 | Type | Synonyms | Color |
 |---|---|---|
-| `note` | (fallback for unknown types) | Blue |
+| `note` | `seealso`; also the fallback for unknown types | Blue |
 | `abstract` | `summary`, `tldr` | Light blue |
 | `info` | `todo` | Cyan |
 | `tip` | `hint`, `important` | Teal |
@@ -42,7 +51,7 @@ resolve to the same color):
 | `fail` | `failure`, `missing` | Light red |
 | `danger` | `error` | Red |
 | `bug` | | Pink |
-| `example` | | Purple |
+| `example` | `snippet` | Purple |
 | `quote` | `cite` | Gray |
 
 **Collapsible**: prefix the type with `???` (starts collapsed) or `???+`
@@ -148,7 +157,10 @@ println( user.getFullName() )
 ````
 
 `title` (none), `height` (`450px` default), `readonly` (`false` default) are
-all optional.
+all optional. `ro` is an alias of `readonly`, and `height` takes a bare
+number (pixels) or a `px`/`rem`/`em`/`vh` length. The fence is extracted
+right after `{{ }}` resolution and before tabs, math, code annotations and
+directives, so `$`, `===` and `:::` inside the code are never misparsed.
 
 ## Diagrams
 
@@ -186,6 +198,10 @@ Standard GFM pipe tables, always on:
 - Every table auto-wraps in `.bxsites-table-wrap` for horizontal scroll on
   wide tables and a sticky header on tall ones - no config, no markdown
   needed.
+- Any table with 10 or more data rows (pipe or hand-written `<table>`) gets
+  a live "Filter table..." input injected above it, and each row an Alpine
+  `x-show` (filter only, no sorting). Don't put your own `x-show` on `<tr>`s
+  of a 10+ row raw table - a second one is injected (see the changelog).
 - For a status chip / star rating in a cell, use a magic function - see the
   `bx-sites-variables-functions` skill. For a reader-sortable/filterable
   table, use Alpine.js (below) instead of a plain pipe table.
@@ -259,7 +275,10 @@ WebP re-encoding is on). Breakpoints/formats are set via `bxsites.yaml`'s
 click-to-enlarge lightbox, use the `::: image-gallery` content block (see
 `bx-sites-content-blocks`) rather than hand-rolled HTML - it lists images
 explicitly or discovers them from `docs/assets/gallery/{name}/`, and its
-lightbox is enabled by `bxsites.yaml`'s `imageGallery: true`.
+lightbox is enabled by `bxsites.yaml`'s `imageGallery: true`. That same
+setting makes **every** content image click-to-enlarge, not just gallery
+items; opt an image out with `class="no-zoom"` or `data-no-zoom` (details in
+`bx-sites-content-blocks`).
 
 **Captions, alignment, framing** - plain block-level HTML passes
 through untouched (CommonMark's own HTML-block rule), no bx-sites syntax:

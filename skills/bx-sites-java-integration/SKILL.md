@@ -22,10 +22,23 @@ behavior are identical between them - pick whichever matches your build tool.
 Neither plugin duplicates `bxsites.yaml`/`.toml`/`.json` - your site's
 look/theme/nav/everything-else stays controlled by that one config file
 (see `bx-sites-configuration`), same as a CommandBox-run project. Both infer
-the content directory (`docs/`, falling back to `src/` - except with the
-Java plugin applied, where `src/` is real Java source and never used as
-content) and always write output to `<projectRoot>/site/` (not settable -
-bx-sites itself hardcodes it).
+the content directory (`docs/`, falling back to `src/`) and always write
+output to `<projectRoot>/site/` (not settable - bx-sites itself hardcodes
+it). Two caveats on that inference:
+
+- It lives in the plugin/core (`ContentDirResolver`), not in bx-sites, and
+  **ignores `bxsites.yaml`'s `source:`**. bx-sites itself honors `source:`
+  when it builds, but the plugin's staleness checks and the Spring Boot
+  generators' output pages still target the inferred `docs/`. Keep content
+  in `docs/` (or `source: docs`) in a plugin-driven project.
+- The `src/` fallback is skipped in a Java project, since `src/` is real
+  Java source there. The "Java project" marker is the Java plugin applied
+  (Gradle) or an existing `src/main/java` directory (Maven); either way it
+  defaults to `docs/`.
+
+Provisioning downloads are checksum-verified (SHA-256/SHA-512) into a shared
+cache at `~/.bxsites/cache` (override with the `BXSITES_CACHE_DIR` env var),
+so repeat runs and other projects reuse them.
 
 ## Gradle
 
@@ -45,6 +58,19 @@ Other tasks: `bxSitesClean`, `bxSitesSearchIndex`, `bxSitesLint` (wired into
 `check` by default), `bxSitesDeploy`, `bxSitesPublish` (bxSites Cloud),
 `bxSitesPackage` (`site.zip`), `bxSitesStats`, `bxSitesDoctor`.
 `bxSitesBuild` never runs as part of `assemble` unless you opt in.
+
+`bxSitesProvision` is Gradle-only: it downloads/reuses the BoxLang runtime
+and bx-sites into `boxlangHomeDir`, and every verb task depends on it, so you
+rarely run it directly. (Maven goals provision themselves.)
+
+**Passing verb flags** - every verb task has an `extraArgs` list property
+whose entries go straight to the bx-sites CLI:
+
+```kotlin title="build.gradle.kts"
+tasks.named<ortus.boxlang.bxsites.gradle.tasks.BxSitesDeployTask>("bxSitesDeploy") {
+    extraArgs.add("--entry=production")   // deployments/production.yaml
+}
+```
 
 ```kotlin title="build.gradle.kts"
 bxSites {
@@ -105,6 +131,19 @@ skips the subprocess entirely when nothing is newer. Force it with
 </plugin>
 ```
 
+**Passing verb flags** - every verb goal (`build`, `deploy`, `publish`, ...) accepts `extraArgs` (a list), from the
+command line or the POM:
+
+```bash
+mvn bxsites:deploy -Dbxsites.extraArgs=--entry=production
+```
+
+```xml title="pom.xml"
+<configuration>
+  <extraArgs><arg>--entry=production</arg></extraArgs>
+</configuration>
+```
+
 ## Spring Boot doc generators
 
 Three generators, none wired into any lifecycle by default - opt in and, for
@@ -140,6 +179,9 @@ bxSites {
 mvn bxsites:openapi -Dbxsites.openapi.specFile=target/openapi/openapi.json
 ```
 
+Gradle's `specFile` defaults to `build/openapi/openapi.json`; Maven's
+`bxsites.openapi.specFile` is required.
+
 **Known limitation**: Swagger UI renders entirely client-side, so
 per-endpoint text never reaches the search index - only the wrapper page's
 own title/frontmatter is indexed.
@@ -147,7 +189,12 @@ own title/frontmatter is indexed.
 ### Javadoc (in-process, JDK doclet SPI)
 
 One Markdown page per public top-level Java type, using the JDK's own
-Javadoc doclet SPI in-process (no `javadoc` subprocess).
+Javadoc doclet SPI in-process (no `javadoc` subprocess). Each page has a
+search box plus per-kind chip filters over its constructors, methods and
+fields.
+
+Gradle has no default for `sourceFiles` - it must be set (as below) or there
+is nothing to document. Maven defaults to the project's compile source roots.
 
 ```kotlin title="Gradle: bxSitesJavadocDoc"
 bxSites {
@@ -167,10 +214,10 @@ mvn bxsites:javadoc
 ```
 
 **Deliberately scoped down for v1** - not a complete Javadoc-to-Markdown
-converter. Covers: public/protected constructors and methods of public
-top-level types (nested/package-private types and fields are skipped), each
-member's own (not inherited) doc comment, and `@param`/`@return`/`@throws`/
-`@deprecated`. Doesn't yet: convert inline HTML in doc comments (best-effort
+converter. Covers: public/protected constructors, methods and fields (a
+"Fields" section) of public top-level types (nested and package-private
+types and non-public members are skipped), each member's own (not inherited)
+doc comment, and `@param`/`@return`/`@throws`/`@deprecated`. Doesn't yet: convert inline HTML in doc comments (best-effort
 text extraction only); resolve `{@link}`/`{@see}` as real hyperlinks
 (renders as inline code); generate an index/nav page (wiring pages into
 nav is yours). Runs against source directly, so a record's
@@ -190,6 +237,7 @@ bxSites {
     springBoot {
         controllerScan {
             // enabled defaults true unless springBoot.openApi.enabled is true
+            // classesDir and runtimeClasspath have NO default in Gradle - set both
             classesDir.set(layout.buildDirectory.dir("classes/java/main"))
             runtimeClasspath.from(configurations.getByName("runtimeClasspath"))
             pagePathPrefix.set("api/controllers")     // default
@@ -203,9 +251,11 @@ bxSites {
 mvn bxsites:controller-scan
 ```
 
-Maven's goal requires `requiresDependencyResolution=RUNTIME` - bind it
-after `compile` (e.g. to `process-classes`) if wiring it into your own
-build. **Deliberately scoped down**: only directly-annotated
+Maven's goal defaults `classesDir` to `${project.build.outputDirectory}` and
+resolves the runtime classpath itself (`requiresDependencyResolution=RUNTIME`)
+- bind it after `compile` (e.g. to `process-classes`) if wiring it into your
+own build. Parameters: `-Dbxsites.controllerScan.classesDir`,
+`.pagePathPrefix`, `.tags`. **Deliberately scoped down**: only directly-annotated
 `@Controller`/`@RestController` classes are recognized (a custom stereotype
 annotation built on one isn't); only directly-annotated
 `@RequestMapping`/`@GetMapping`/`@PostMapping`/`@PutMapping`/
@@ -233,6 +283,7 @@ bxSites {
             excludes.set("tests|build")
             pagePathPrefix.set("api/docbox")    // default
             tags.set(listOf("api", "docbox"))   // default
+            jsonDir.set("build/docbox-json")    // optional: keep DocBox's JSON output
         }
     }
 }
@@ -245,13 +296,28 @@ bxSites {
   <excludes>tests|build</excludes>
   <pagePathPrefix>api/docbox</pagePathPrefix>
   <tags><tag>api</tag><tag>docbox</tag></tags>
+  <jsonDir>target/docbox-json</jsonDir>  <!-- optional: keep DocBox's JSON output -->
 </configuration>
 ```
+
+(`-Dbxsites.docbox.projectTitle`, `.excludes`, `.pagePathPrefix`, `.tags` and
+`.jsonDir` also work; `mappings` is POM-only.) The `// default` values above
+are the `bxsites.yaml` defaults, not plugin conventions: the plugin passes
+only what you set.
 
 See `bx-sites-api-docs` for what the generated pages look like. **There is
 deliberately no ColdBox task/goal** - a ColdBox app is built and run through
 CommandBox, never Gradle/Maven, so `bxSites coldbox` (see `bx-sites-api-docs`)
 stays a CLI-only concern.
+
+## Detecting failure
+
+Each task/goal fails the build when the bx-sites subprocess misbehaves. A
+run counts as successful only if **all** hold: the exit code is `0`, no
+output line starts with `Error:` (the CLI's error prefix), and - for `build`
+only - `site/index.html` exists and is non-empty. The subprocess has a
+30-minute timeout. When a build fails, read the captured output in the
+Gradle/Maven failure message first.
 
 ## What's not built yet
 

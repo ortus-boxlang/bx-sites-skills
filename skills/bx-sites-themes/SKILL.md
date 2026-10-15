@@ -2,7 +2,7 @@
 name: bx-sites-themes
 metadata:
   version: "1.0"
-description: Choose, customize, override, install, or write a theme for a bx-sites (ortus-boxlang/bx-sites) site - the 10 built-in themes, air-gapped/offline considerations, the ThemeProvider contract (layout.bxm/page.bxm, plus optional search.bxm/blog.bxm/blog-page.bxm and any frontmatter-named layout), the layout: frontmatter key (outer shell + body), bootstrap's marketing homepage (home.bxm), color-only customization via extraCss, ejecting/overriding a theme, writing one from scratch, installing a published theme from ForgeBox, importing an mkdocs/jekyll/hugo theme, and the homepage hero banner. Use this whenever a user wants to change a bx-sites site's look, brand colors, or write/override its templates.
+description: Choose, customize, override, install, or write a theme for a bx-sites (ortus-boxlang/bx-sites) site - the 10 built-in themes, air-gapped/offline considerations, the ThemeProvider contract (layout.bxm/page.bxm, plus optional search.bxm/blog.bxm/blog-page.bxm and any frontmatter-named layout), the layout: frontmatter key (outer shell + body), bootstrap's marketing homepage (home.bxm), color-only customization via extraCss, ejecting/overriding a theme, writing one from scratch (template variables, shared helpers like bxsitesNavHref/bxsitesIcon, which shared scripts to load), the page-actions dropdown and image gallery chrome, installing a published theme from ForgeBox, importing an mkdocs/jekyll/hugo theme, and the homepage hero banner. Use this whenever a user wants to change a bx-sites site's look, brand colors, or write/override its templates.
 ---
 
 # BxSites Themes Reference
@@ -29,7 +29,8 @@ The seven `material`-forked themes reuse `material`'s exact `.bxm` templates
 unchanged except a scoped CSS-class-prefix rename (and, for `justthedocs`,
 one relocated `<bx:include>` line) - same full feature set, same
 air-gapped-capable behavior. `bootstrap`/`material`/`tailwind` share the
-BoxLang brand palette (`#00FF78 -> #00DBFF` gradient, `#FFF500` accent); the
+BoxLang brand palette (`#00FF78 -> #00DBFF` gradient); their accents differ
+(`bootstrap` `#FFF500`, `material` `#00C853`, `tailwind` `#38bdf8`). The
 seven gallery themes each use their own distinct palette.
 
 Every theme ships the same feature set regardless of palette: in-page TOC,
@@ -45,6 +46,25 @@ annotations, responsive images, Mermaid, math - see `bx-sites-markdown` and
 `bx-sites-content-blocks` for that content-side syntax, and
 `bx-sites-configuration` for every key mentioned here.
 
+Recent chrome, in all 10 themes unless noted (config keys, including every
+`theme.options` key such as `accentColor`/`accentColorDark` - a no-CSS
+alternative to the `extraCss` recipe below - live in `bx-sites-configuration`):
+
+- **Page actions dropdown** - `pageActions: true`, placed by
+  `theme.options.pageActionsPosition` (`top`|`bottom`). Items: Copy page, Copy
+  link, View as Markdown, Open in ChatGPT/Claude, Edit on GitHub, Export as
+  PDF, Share on X/LinkedIn/Facebook. Each item only appears when the page has
+  what it needs: Markdown items need `page.markdownUrl`; copy link, AI and
+  share items need `page.canonicalUrl` (set `baseURL`); Edit needs `page.editUrl`.
+- **"Report an issue"** link in the page-meta row when `repo.url` is set.
+- **Prev/next cards**, and **course lesson nav** (badge plus prev/next cards)
+  when the page belongs to a `::: course` (`page.course`).
+- **TOC** - `theme.options.tocPosition`: `top` (default) or `sticky` (side rail).
+- **Click-to-enlarge images** - `imageGallery: true` ships a lightbox for
+  every content image (opt out per image with `class="no-zoom"`).
+- **Locale dropdown** when `i18n` locales exist; **"Powered by BxSites"**
+  badge, unconditional (`bxsites-logo.svg`).
+
 ```yaml title="bxsites.yaml"
 theme: { name: material }
 ```
@@ -58,7 +78,9 @@ bxSites install:theme --name=bx-sites-theme-blog1 [--version=1.0.0]
 Downloads from ForgeBox into `<contentRoot>/.themes/bx-sites-theme-blog1/`
 (inside the project's resolved content root, not the bare project root - see
 "Resolution order" below), validating the `ThemeProvider` contract before
-finishing (a broken package fails at install time, not at the next `build`). No separate
+finishing (a broken package fails at install time, not at the next `build`).
+Re-installing the same name deletes the existing `.themes/<name>/` first, with
+no prompt (unlike `theme:import`, which merges - see below). No separate
 activation step (unlike a plugin - see `bx-sites-plugins`) - just set
 `theme.name` to match. Browse published themes under ForgeBox's
 `bxsites-themes` category.
@@ -106,15 +128,45 @@ A theme is a folder with:
   "Multiple layouts per page" below). Not enforced; a name no theme file
   matches simply falls back.
 
-Also available: `variables.page.editUrl`/`.lastUpdated` (empty strings if
-unconfigured), `variables.siteConfig.repo`/`.social`/`.footer`,
-`variables.versions` (`[ { label, url, kind } ]`, "Latest" first,
-`kind` one of `"current"`/`"released"`/`"next"` - see
-`bx-sites-blog-versioning-i18n`) + `variables.currentVersion`, and a shared
-icon include (`<bx:include template="#variables.moduleAssetsDir#/icons.bxm">`,
-defines `bxsitesIcon( name )`).
+Also available in every template (a from-scratch theme can rely on all of
+these; missing optional values are defaulted to empty):
 
-Two more helpers are bound into every theme's render scope (built-in or
+- `variables.page` always carries: `title`, `contentHtml`, `toc`
+  (`[ { level, id, text } ]`), `prevPage`/`nextPage` (`{ title, url }`),
+  `breadcrumbs`, `course` (`id` is `""` when the page isn't a lesson), `editUrl`,
+  `lastUpdated`, `description`, `tags`, `icon`, `iconHtml`, `summary`,
+  `ogImage`, `markdownUrl`, `canonicalUrl` (empty without `baseURL`),
+  `urlPath`, `isFallbackContent`.
+- `variables.siteConfig` (`repo`, `social`, `footer`, `theme.options`, ...),
+  `variables.moduleAssetsDir`, `variables.data` (data files),
+  `variables.locales` / `currentLocale` / `currentLocaleDir` (`ltr`|`rtl`,
+  for `<html dir>`), and `variables.strings` (the locale's UI labels, e.g.
+  `strings.toggleDarkMode`; `variables.stringsResolver.format()` fills
+  placeholders in them).
+- Project `$`-prefixed magic functions are bound bare, like the helpers below.
+- `variables.versions` (`[ { label, url, kind } ]`, `kind` one of
+  `"current"`/`"released"`/`"next"` - see `bx-sites-blog-versioning-i18n`) +
+  `variables.currentVersion`. Order depends on `versions.default`: unset, it is
+  "Latest" (`current`) then released versions newest first; set, it is that
+  version (`current`), the other released versions, then "Next" (`next`) last.
+
+Shared includes (`<bx:include template="#variables.moduleAssetsDir#/icons.bxm">`
+and `.../locale-flags.bxm`):
+
+- `bxsitesIcon( name )` - raw SVG for `github`, `twitter`/`x`, `rss`,
+  `youtube`, `linkedin`, `facebook`, `bluesky`, `threads`, `slack`, `patreon`,
+  `email`, `edit`, `clock`, `markdown`, `globe`, `moon`, `sun`, `copy`,
+  `link`, `print`, `sparkle`, `chevron-down`, `flag`, `outline`; an unknown
+  name returns the generic globe.
+- `bxsitesUrlAttr( value )` - escapes only `&`, `"`, `<` (keeps `/` intact)
+  for a double-quoted attribute.
+- `bxsitesNavHref( url, basePath )` - the `href` for a nav node: prefixes
+  `basePath` to docs-relative URLs, keeps absolute ones (`https:`, `mailto:`,
+  `//host`), turns `javascript:`/`data:`/`vbscript:` into `#`, and
+  attribute-escapes. Always use it for nav links instead of concatenating.
+- `bxsitesLocaleFlag( code )` (locale-flags.bxm) - flag emoji for a locale code.
+
+Three more helpers are bound into every theme's render scope (built-in or
 custom) the same way, no include needed:
 
 - `themeAssetUrl( "style.css" )` / `moduleAssetUrl( "copy-code.js" )` -
@@ -130,8 +182,10 @@ custom) the same way, no include needed:
   third argument of extra CSS classes instead of reimplementing the markup.
 
 A theme folder missing either required file fails fast with
-`BxSites.InvalidTheme` at build time. `blog.bxm`/`blog-page.bxm` are never
-enforced - same "optional, falls back" shape `search.bxm` already has.
+`BxSites.InvalidTheme` at build time; a `theme.name` that matches no
+override, installed, or built-in theme fails with `BxSites.ThemeNotFound`.
+`blog.bxm`/`blog-page.bxm` are never enforced - same "optional, falls back"
+shape `search.bxm` already has.
 
 Both override locations below live inside the project's *resolved content
 root* (`docs/`, `src/`, a custom `source:`, or the project root itself for
@@ -170,6 +224,11 @@ active theme doesn't have falls back to `layout.bxm`/`page.bxm` rather than
 failing the build, so switching themes never breaks a page that named one
 theme's own custom layout.
 
+Caveat: this two-slot behavior is for doc pages. For a blog **post** a
+frontmatter `layout:` resolves only the body (the shell stays `layout.bxm`,
+since a post's shell hint is empty); the blog's own listing pages use `blog.bxm`
+as the shell.
+
 ```markdown title="docs/index.md - an alternate outer shell for one page"
 ---
 title: BxSites
@@ -183,7 +242,9 @@ horizontal marketing nav instead of the docs hamburger - and it never
 includes `#variables.bodyFile#`, so the whole page is hardcoded in the
 template and that page's own Markdown body goes unused while it renders.
 Drop `layout: home` and the page falls straight back to the normal
-`layout.bxm`/`page.bxm` rendering, body included.
+`layout.bxm`/`page.bxm` rendering, body included. `home.bxm` exists **only in
+`bootstrap`**; in the other 9 themes `layout: home` falls back to
+`layout.bxm`/`page.bxm`.
 
 So a frontmatter `layout:` is all-or-nothing across both slots: the named
 template has to be a complete outer shell that renders everything itself,
@@ -235,7 +296,7 @@ same-specificity re-declaration wins:
 extraCss: [ assets/brand.css ]
 ```
 
-```css title="docs/assets/brand.css"
+```css title="docs/assets/brand.css (gradient lines: not for tailwind)"
 :root {
 	--bxsites-gradient-start: #7C3AED;
 	--bxsites-gradient-end: #DB2777;
@@ -250,16 +311,23 @@ extraCss: [ assets/brand.css ]
 }
 ```
 
-Every built-in theme guarantees `--bxsites-gradient-start`/`-end`,
-`--bxsites-accent`, and the `--bxsites-step-*` set (backing the
-`::: stepper` block - see `bx-sites-content-blocks`) under those exact
-names. Only `bootstrap`, `slate`, and `notion` also expose
-`--bxsites-bg`/`-text`/`-sidebar-bg`/`-sidebar-text`/`-border`/`-link`/
-`-link-hover`/`-code-bg` under those names (`justthedocs` aliases all but
-the two `-sidebar-*`); every other theme (`material`, `tailwind`, `docsy`,
-`docusaurus`, `vuepress`, `gitbook`) uses its own internal custom-property
-names for that group - open that theme's own `assets/style.css` to find its
-real names first. Anything beyond color/font needs a real override.
+Every built-in theme guarantees `--bxsites-accent`, `--bxsites-link`/
+`-link-hover`, the `--bxsites-table-*` set (table colors), and the
+`--bxsites-step-*` set (backing the `::: stepper` block - see
+`bx-sites-content-blocks`) under those exact names. Beyond that it varies:
+
+- `--bxsites-gradient-start`/`-end` - every theme **except `tailwind`**, which
+  hardcodes Tailwind gradient utilities, so overriding them there does nothing
+  (use `--bxsites-accent`/`theme.options.accentColor` or a real override).
+- `--bxsites-bg`/`-text`/`-muted`/`-border` - `bootstrap`, `justthedocs`,
+  `notion`, `slate`, `tailwind`.
+- `--bxsites-code-bg` - `bootstrap`, `justthedocs`, `notion`, `slate` (not `tailwind`).
+- `--bxsites-sidebar-bg`/`-sidebar-text` - `bootstrap`, `notion`, `slate` only.
+
+`material`, `docsy`, `docusaurus`, `vuepress`, and `gitbook` use their own
+internal custom-property names for the bg/text/border group - open that
+theme's own `assets/style.css` to find the real names first. Anything beyond
+color/font needs a real override.
 
 ## Overriding a theme
 
@@ -273,7 +341,11 @@ starting points to copy:
 bxSites theme:new --theme=bootstrap
 ```
 
-then edit only what's needed - e.g. swap the brand palette/font in
+`--theme` accepts any of the 10 built-in names; it copies the whole theme
+folder recursively (bootstrap's `includes/page-helpers.bxm` and
+`includes/site-helpers.bxm` come along) and throws `BxSites.ThemeOverrideExists`
+if `<contentRoot>/.theme` already exists (remove it or edit it directly).
+Then edit only what's needed - e.g. swap the brand palette/font in
 `.theme/assets/style.css`. `bxSites build`/`serve` pick up `.theme/`
 automatically, no config change needed - it takes precedence over
 `theme.name` entirely. **All-or-nothing**: once a project `.theme/` exists it
@@ -287,13 +359,14 @@ The absolute minimum - no Bootstrap/Tailwind, no dark mode, no search UI:
 
 ```bx title=".theme/layout.bxm"
 <!-- .theme/layout.bxm -->
+<bx:include template="#variables.moduleAssetsDir#/icons.bxm">
 <bx:script>
 	function renderNav( required array nodes ) {
 		var html = "<ul>"
 		for ( var node in arguments.nodes ) {
 			html &= "<li>"
 			html &= len( node.url )
-				? '<a href="' & variables.basePath & node.url & '">' & encodeForHTML( node.title ) & '</a>'
+				? '<a href="' & bxsitesNavHref( node.url, variables.basePath ) & '">' & encodeForHTML( node.title ) & '</a>'
 				: encodeForHTML( node.title )
 			if ( node.children.len() ) {
 				html &= renderNav( node.children )
@@ -339,7 +412,35 @@ The absolute minimum - no Bootstrap/Tailwind, no dark mode, no search UI:
 content-hash cache-busting automatically - see `bx-sites-configuration`'s
 `assets.fingerprint`. It only fingerprints a file directly inside a
 theme's own `assets/`, never one in a subdirectory (a `@font-face`/`@import`
-dependency would break if renamed without rewriting what references it).
+dependency would break if renamed without rewriting what references it) -
+`themeAssetUrl()` returns the plain `assets/theme/<path>` for those. The
+build prints a non-fatal warning when a theme `.bxm` hardcodes
+`assets/theme/...` (or a shared script path) instead of using the helpers.
+
+**Shared scripts a layout must load itself** (a from-scratch layout gets none
+automatically; use `moduleAssetUrl( 'x.js' )`). Always shipped, always load:
+`code-lines.js`, `copy-code.js`, `admonition-collapse.js`, `nav-toggle.js`,
+`toc-collapse.js`, `tabs.js`, `highlight-boxlang.js`,
+`conditional-content-init.js`, `course-progress.js`, `prompt-init.js`,
+`contact-form-init.js` (plus vendored highlight.js and Alpine.js under
+`assets/vendor/`). Only copied into the site when the config turns them on, so
+gate the tag the same way:
+
+| Script | Gate |
+|---|---|
+| `search.js` (+ vendored MiniSearch) | `search: true` with the `local` provider |
+| `page-actions-init.js` | `pageActions: true` |
+| `image-gallery-init.js` | `imageGallery: true` |
+| `mermaid-init.js` (+ vendored mermaid) | `mermaid: true` |
+| `math-init.js` (+ KaTeX from a CDN) | `math: true` |
+| `openapi-init.js` (+ vendored Swagger UI) | `openapi: true` |
+| `cloud-content-init.js` | `cloud.contentBlocks: true` |
+| `comments-init.js` | `cloud.comments: true` (no built-in layout loads it; a theme using `::: comments` must add the tag) |
+
+Gotcha: the vendored Bootstrap CSS/JS is copied into the site only when
+`theme.name` is `bootstrap`. A `.theme/` override copied from bootstrap but
+run under another `theme.name` (or a from-scratch theme) won't find
+`assets/vendor/bootstrap/`.
 
 `variables.page.contentHtml` is already fully converted (syntax
 highlighting, admonitions, tabs, math, all of it) - there's nothing left to
@@ -360,10 +461,15 @@ or `.theme/<name>.bxm` frontmatter override later without touching
 bxSites theme:import --source=mkdocs --path=/path/to/theme --name=my-imported-theme
 ```
 
-`--source` is `mkdocs`, `jekyll`, or `hugo`. Best-effort conversion into a
-`<contentRoot>/.themes/<name>/` scaffold - a starting point, not lossless.
+`--source` is `mkdocs`, `jekyll`, or `hugo` - only those template-based
+themes are importable (not React/Vue component themes). `--path` resolves
+against the project root (relative paths and `~/` work). Best-effort conversion
+into a `<contentRoot>/.themes/<name>/` scaffold - a starting point, not lossless.
 Safe to re-run against the same `--name` (`.bxm` files overwritten, new asset
-folders merged in).
+folders merged in), but if `.themes/<name>/` already exists it asks
+`[y/N]` first: answering no exits 0 having imported nothing, a closed stdin
+(CI, pipes) exits 1, and `--force` skips the prompt. Contrast `install:theme`,
+which deletes an existing `.themes/<name>/` and replaces it with no prompt.
 
 ## Homepage hero banner
 
@@ -387,7 +493,12 @@ the same way any other image resolves.
 
 A homepage that needs more than a banner - hero plus feature grids, a
 comparison table, an ecosystem strip, a richer footer - is a full alternate
-outer shell instead: name one in frontmatter (`layout: home`) and copy
-`bootstrap`'s `home.bxm` as the starting point, per "Multiple layouts per
-page" above. The two compose - `home.bxm` uses these same `bxsites-hero*`
-classes.
+outer shell instead: name one in frontmatter (`layout: home`), per "Multiple
+layouts per page" above. `bootstrap`'s `home.bxm` is a usable reference for
+that shape, but not a drop-in starting point: it is bx-sites' own marketing
+page (hardcoded copy, a comparison table, links into `course/` lessons), uses
+its own `bxh-*` classes with `moduleAssetUrl( 'home.css' )` rather than
+`bxsites-hero*` (those classes live in each theme's `assets/style.css` and
+serve the plain-HTML banner above), and depends on
+`includes/site-helpers.bxm` (`homeIcon()`). Copy it and strip it down; it
+exists only in `bootstrap`.

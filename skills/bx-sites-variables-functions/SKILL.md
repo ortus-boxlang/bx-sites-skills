@@ -2,7 +2,7 @@
 name: bx-sites-variables-functions
 metadata:
   version: "1.0"
-description: Use reusable {{ variables }} and BoxLang "magic functions" in bx-sites (ortus-boxlang/bx-sites) Markdown - bxsites.yaml's variables block, docs/functions.bxs, context variables (page/siteConfig/nav/versions/locales), visualizer recipes (status badges, star ratings, progress bars, trend arrows) including inside table cells, and structured Data Files (docs/data/*.yaml/.toml/.json, or a docs/data/*.bx data class for computed data) reachable as data.<file>. Use this whenever a user wants to avoid repeating a fact across pages, wants a status chip/rating/progress bar, wants a team roster/pricing table/feature matrix reachable from every page, or wants to write reusable BoxLang logic callable from Markdown. For the ::: for/::: if content blocks that loop/branch over data.*, use bx-sites-content-blocks.
+description: Use reusable {{ variables }} and BoxLang "magic functions" in bx-sites (ortus-boxlang/bx-sites) Markdown - bxsites.yaml's variables block, docs/functions.bxs, context variables (page/siteConfig/nav/versions/locales/data), page variables ({{ page.title }}, {{ page.frontmatter.<key> }}), visualizer recipes (status badges, star ratings, progress bars, trend arrows) including inside table cells, and structured Data Files (docs/data/*.yaml/.toml/.json, or a docs/data/*.bx data class for computed data) reachable as data.<file>. Use this whenever a user wants to avoid repeating a fact across pages, wants a status chip/rating/progress bar, wants a team roster/pricing table/feature matrix reachable from every page, or wants to write reusable BoxLang logic callable from Markdown. For the ::: for/::: if content blocks that loop/branch over data.*, use bx-sites-content-blocks.
 ---
 
 # BxSites Variables & Magic Functions
@@ -40,6 +40,19 @@ We build {{ product.name }} tools. Need help? Write us at
 Resolved once, at build time, against `bxsites.yaml`'s current `variables` -
 change it once, every page picks it up on the next build.
 
+**Page variables** - the current page is reachable under the reserved name
+`page`: `{{ page.title }}`, `{{ page.summary }}`, and any frontmatter key
+bx-sites doesn't itself read under `page.frontmatter.<customKey>`:
+
+```markdown
+This guide covers {{ page.frontmatter.product }}.
+```
+
+**Ordering** - `::: include` runs first, so a `{{ }}` inside an included
+partial resolves like any other. A `{{ }}` inside a `::: for`/`::: if` body
+(see `bx-sites-content-blocks`) is resolved per iteration, so it can use the
+loop variables.
+
 `variables` is a single, project-wide block - not itself translatable per
 locale. A multilingual project wanting different text per language should
 use a magic function switching on `siteConfig.i18n.defaultLocale.code`, or
@@ -47,7 +60,9 @@ keep the value locale-neutral.
 
 ## Magic functions
 
-Add `docs/functions.bxs` (or `src/functions.bxs`) - a plain BoxLang script.
+Add `functions.bxs` at the content root (`docs/functions.bxs`, or
+`src/functions.bxs` when that is your content folder) - a plain BoxLang
+script, loaded once from the main tree.
 Any function named with a leading `$` becomes callable from `{{ }}` in
 Markdown, and bare (no `$`) from a project `.theme/` `.bxm` override (see
 `bx-sites-themes`):
@@ -88,23 +103,30 @@ Available bare, with no argument, inside any magic function body:
 | Variable | What it is |
 |---|---|
 | `siteConfig` | The resolved `bxsites.yaml` config |
-| `page` | The current page (see caveat below) |
+| `page` | The current page (see caveat below); a reserved name |
 | `nav` | This tree's own nav tree |
 | `basePath` | Root-relative base path, ending with `/` |
-| `versions` | Version-switcher entries - `[ { label, url } ]` |
+| `versions` | Version-switcher entries - `[ { label, url, kind } ]`; `kind` is `"current"`, `"released"` (newest first, numerically) or `"next"` (always last) |
 | `currentVersion` | Which `versions` entry is rendering now |
 | `locales` | Language-switcher entries - `[ { code, label, url, dir, flag } ]` |
 | `currentLocale` | Which `locales` entry's code is rendering now |
 | `currentLocaleDir` | `"ltr"`/`"rtl"` for the current locale |
+| `data` | Project data files from `docs/data/` (see Data Files below); `{}` if there are none |
 
 **`page` isn't equally complete everywhere.** Called from Markdown, `page`
 is this page's own struct as loaded from disk - `title`/`description`/
 `tags`/`icon`/`summary`/`ogImage`/`urlPath`/`relativePath`/`body`/etc. exist,
 but fields only known once the whole tree has converted (`toc`,
 `prevPage`/`nextPage`, `breadcrumbs`, `editUrl`/`lastUpdated`, `iconHtml`,
-`markdownUrl`, `canonicalUrl`) don't yet. Called bare from `page.bxm`, `page`
-is fully enriched, all of those included. Every other context variable is
-identical in both places.
+`markdownUrl`, `canonicalUrl`, `course`) don't yet. Called bare from
+`page.bxm`, `page` is fully enriched, all of those included. Every other
+context variable is identical in both places.
+
+`page.course` is always present once enriched (empty for a page that isn't a
+course lesson): `{ id, courseTitle, lessonIndex, lessonTotal,
+prevLesson{ title, url }, nextLesson{ title, url }, indexUrl }`. `indexUrl`
+is the page holding the course's `::: course` block. See the Courses section
+of `bx-sites-blog-versioning-i18n`.
 
 ### Argument syntax
 
@@ -200,7 +222,7 @@ contains a hyphen/space - see `BxSites.UnsupportedDataClassPath` below.
 ### Consuming data
 
 A scalar `{{ data.x.y }}` works anywhere `{{ }}` already does. For a loop -
-a team grid, a pricing table - there are three places to put it:
+a team grid, a pricing table - there are four places to put it:
 
 - **A theme override** - `data` is bound bare into `layout.bxm`/`page.bxm`
   the same way `page`/`siteConfig` already are (see `bx-sites-themes`); the
@@ -210,10 +232,27 @@ a team grid, a pricing table - there are three places to put it:
 - **A magic function** - reads `data` bare (one of the same "supporting
   variables" `page`/`siteConfig` already are), loops/branches with real
   BoxLang, returns a Markdown/HTML fragment. Renders server-side, visible to
-  a search crawler with no JavaScript needed.
+  a search crawler with no JavaScript needed. As in a theme override, a data
+  class is the live instance, so call `getData()` explicitly.
 - **`::: for`/`::: if` directly in Markdown** - see `bx-sites-content-blocks`
   for the full syntax; a dotted-path-only loop/conditional, no comparison
   operators, that binds straight from a page with no magic function needed.
+- **Alpine `x-data`, client-side only** - feed `data.*` into an Alpine
+  component through a one-line helper in `functions.bxs`:
+
+  ```bx title="docs/functions.bxs"
+  function $jsonAttr( required any value ) {
+  	return encodeForHtmlAttribute( jsonSerialize( arguments.value ) )
+  }
+  ```
+
+  ```markdown
+  <div x-data="{ team: {{ $jsonAttr(data.team) }} }"> ... </div>
+  ```
+
+  The `encodeForHtmlAttribute()` step makes it safe inside a `"..."`
+  attribute. Nothing renders without JavaScript, so prefer a magic function
+  or `::: for` for content a crawler should see.
 
 ### Scope
 
@@ -302,8 +341,9 @@ GitBook's Select/Rating columns:
 
 ## Showing the syntax literally
 
-A `{{ }}` inside a fenced code block (3+ backticks) is left completely
-untouched. A `{{ }}` in *inline* code (single or double backticks) is
+A `{{ }}` inside a fenced code block (3+ backticks, or `~~~`) is left
+completely untouched, including fences indented 4+ spaces or a tab (the code
+inside a tab or admonition body). That over-protection is deliberate. A `{{ }}` in *inline* code (single or double backticks) is
 protected too. A `{{ }}` whose contents don't look like a variable path or
 a `$name(...)` call (some other templating engine's own `{{ }}` shown in
 prose) is left untouched rather than erroring - only a token that *looks*
@@ -312,7 +352,8 @@ build.
 
 ## Scope
 
-- `functions.bxs` is project-wide - one file, loaded once, available on
+- `functions.bxs` is project-wide - one file at `<content root>/functions.bxs`,
+  loaded once from the main tree, available on
   every page across the main tree and every version/locale tree (see
   `bx-sites-blog-versioning-i18n`). No need to duplicate it into
   `docs/versions/<name>/` or `docs/i18n/<code>/`.
@@ -325,8 +366,9 @@ the built-ins it already reads. Avoid naming a private helper (no `$`
 prefix) any of: `page`, `nav`, `siteConfig`, `themeDir`, `basePath`,
 `moduleAssetsDir`, `versions`, `currentVersion`, `locales`,
 `currentLocale`, `currentLocaleDir`, `strings`, `requiredFiles`,
-`stringsResolver`, `data` - a `$`-prefixed magic function can never collide
-with any of these since none start with `$`.
+`stringsResolver`, `data`, `layoutFile`, `bodyFile`, `themeAssetUrl`,
+`moduleAssetUrl`, `renderVersionSwitcher` - a `$`-prefixed magic function
+can never collide with any of these since none start with `$`.
 
 ## Errors
 
@@ -334,5 +376,7 @@ with any of these since none start with `$`.
   `variables`.
 - `BxSites.UnknownFunction` - a `{{ $name(...) }}` doesn't match any
   `$`-function in `functions.bxs`.
-- `BxSites.InvalidFunctions` - `functions.bxs` has a BoxLang syntax error.
+- `BxSites.InvalidFunctions` - `functions.bxs` has a BoxLang syntax error, or
+  any function in it (a plain helper too, not just `$`-prefixed ones) is
+  named one of the Reserved names above.
 - `BxSites.InvalidConfig` - `variables` is present but isn't an object.

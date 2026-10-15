@@ -9,7 +9,9 @@ description: Full bxsites.yaml/bxsites.toml/bxsites.json key reference for a bx-
 
 One site config at the project root: `bxsites.yaml` (or `.yml`, default/
 preferred), `bxsites.toml`, or `bxsites.json` - all three fully supported,
-same keys, same defaults. If more than one is present, `bxsites.yaml` wins,
+same keys, same defaults (YAML needs the bx-yaml module, TOML config or
+`docs/data/*.toml` needs bx-toml; BoxLang 1.18+ is the minimum runtime, and
+the CLI exits non-zero on any failure). If more than one is present, `bxsites.yaml` wins,
 then `bxsites.yml`, then `bxsites.toml`, then `bxsites.json`. Only `name` is
 required - everything else defaults as shown. A partial `theme` object
 merges one level deep (`{theme: {name: material}}` keeps the default empty
@@ -27,9 +29,11 @@ theme:
   logo: ""
   favicon: ""
 search: true
+mcp: false
 searchProvider:
   provider: local
   algolia: { appId: "", apiKey: "", indexName: "", insights: false }
+  pagefind: { bin: pagefind, options: [] }
 nav: []
 markdown:
   enableAdmonition: true
@@ -68,7 +72,23 @@ blog:
 versions:
   default: ""
 variables: {}
-cloud: { siteId: "", apiUrl: "" }
+cloud:
+  siteId: ""
+  apiUrl: ""
+  contentBlocks: false
+  contentBlocksOnError: fail
+  comments: false
+docbox:
+  projectTitle: ""
+  mappings: {}
+  excludes: ""
+  pagePathPrefix: api/docbox
+  tags: [api, docbox]
+coldbox:
+  appRoot: ""
+  pagePathPrefix: api/coldbox
+  tags: [api, coldbox]
+  include: [routes, handlers, models, modules, interceptors, scheduler]
 ```
 
 All three formats use the identical key names/shapes - only the syntax
@@ -91,8 +111,8 @@ children = [ "api/docbox/index.md" ]
 
 `name` (required) - site name, shown in header/brand mark and page titles.
 `description` - fallback `<meta name="description">`/`og:description` for
-any page without its own `description` frontmatter (see
-`bx-sites-getting-started` for page frontmatter).
+any page without its own `description` frontmatter, then `summary`, then a
+derived excerpt (see `bx-sites-getting-started` for page frontmatter).
 
 ## `baseURL`
 
@@ -122,16 +142,21 @@ guessing. `bxSites new` always writes an explicit `source:`. `.theme`/
 `.themes/<name>` theme overrides (see `bx-sites-themes`) live inside this
 resolved content root, not the bare project root - important for a
 multi-domain monorepo where several project roots share one repo.
+`source: site` is rejected (`site/` is the generated output folder).
 
 ## `exclude`
 
-`[]` default - extra file/folder names to leave out of the content scan, on
-top of bx-sites' always-applied excludes (`.git`, `.github`, `node_modules`,
-`boxlang_modules`, `site`, `.theme`, `.themes`, and the project's own config
-file name). Matched by bare name anywhere under `source`. Deliberately does
-**not** auto-exclude `README.md`/`LICENSE.md`/`CHANGELOG.md` - a project can
-have a real content page at that name; a `source: .` project not wanting its
-root README/LICENSE/CHANGELOG published opts out via `exclude` instead.
+`[]` default - extra entries to leave out of the content scan. Matching is
+**anchored at the content root**, not a bare name at any depth: an entry is
+a root-level file/folder name or a root-relative path prefix (`internal/
+drafts`), checked as `^<entry>(/|$)` in `DocsLoader.bx`. Always excluded
+regardless: `.git`, `.github`, `boxlang_modules`, `node_modules`, `site`,
+`.theme`, `.themes`, `bxsites.yaml`/`.yml`/`.toml`/`.json`, `box.json`, and
+**any** dot-prefixed file or folder. `assets/`, `versions/`, `i18n/`,
+`blog/` and `includes/` are handled separately in every tree. Deliberately
+does **not** auto-exclude `README.md`/`LICENSE.md`/`CHANGELOG.md` - a project
+can have a real content page at that name; a `source: .` project not wanting
+its root README/LICENSE/CHANGELOG published opts out via `exclude` instead.
 
 ## `robots.txt`
 
@@ -145,8 +170,10 @@ control** (the site is still fully reachable by URL - see
 
 ## `theme`
 
-- `theme.name` - `bootstrap`/`material`/`tailwind`/a gallery theme name, or a
-  custom theme's own name - see `bx-sites-themes`
+- `theme.name` - one of the ten built-in themes (`bootstrap` default,
+  `material`, `tailwind`, `docsy`, `slate`, `docusaurus`, `justthedocs`,
+  `vuepress`, `gitbook`, `notion`) or a custom theme's own name - see
+  `bx-sites-themes`
 - `theme.logo`/`theme.favicon` - path (resolved against `docs/assets/`,
   prefixed with `baseURL`) or absolute URL
 - `theme.options.colorMode` - `"auto"` (default, follows OS)/`"light"`/`"dark"`
@@ -175,6 +202,10 @@ control** (the site is still fully reachable by URL - see
   visitor-facing UI to change them, and no effect on a theme that ignores
   them - for palette work across every theme, use `extraCss` instead (see
   `bx-sites-themes`)
+- `theme.options.navAccentLine` - `true` (default) draws a thin vertical
+  line alongside a nested sidebar nav section; `false` turns it off.
+  `navAccentLineColor` (3- or 6-digit hex) overrides its color, falling back
+  to `accentColor`/`accentColorDark`, then the theme's native accent
 
 ## `search` / `searchProvider`
 
@@ -277,7 +308,8 @@ breaking the build.
 
 ## `analytics`
 
-Google Analytics only currently: `provider: "google"` + `id: "G-ABC123"`.
+Google Analytics only currently: `provider: "google"` + `id: "G-ABC123"`
+(`id` letters, digits and hyphens only).
 
 ## `ogImage` / `generateOgImages`
 
@@ -300,18 +332,21 @@ The image-resizing/bundling pipeline, on by default with sane settings -
 usually nothing to touch.
 
 - `assets.fingerprint` (`true`) - content-hash names generated variants/
-  bundles **and the active theme's own `assets/style.css`** for safe
-  far-future caching, so a theme update busts every visitor's cache on the
-  next deploy with no manual versioning; never renames a project's own
-  originals under `docs/assets/` (so `::: file` cards and plain-filename
-  links keep working).
+  bundles **and any top-level CSS/JS file** in the active theme's `assets/`
+  and the module's shared assets (e.g. `style.<hash>.css`,
+  `copy-code.<hash>.js`; not subdirectories) for safe far-future caching, so
+  a theme update busts every visitor's cache on the next deploy with no
+  manual versioning; never renames a project's own originals under
+  `docs/assets/` (so `::: file` cards and plain-filename links keep
+  working).
 - `assets.bundle` (`true`) - concatenates `extraCss`/`extraJs` into one
   fingerprinted file each (pure BoxLang/JVM, no Node toolchain).
 - `assets.images.enabled` (`true`) - resize/WebP + `<picture>` rewrite for
   eligible images; `false` falls back to plain unprocessed copying.
 - `assets.images.widths` (`[400, 800, 1200, 1600]`) - breakpoints; a width
   at/above an image's own is skipped (never upscaled).
-- `assets.images.formats` (`["original", "webp"]`).
+- `assets.images.formats` (`["original", "webp"]`) - only `original` and
+  `webp` are accepted.
 
 ## `mermaid` / `math` / `openapi` / `imageGallery`
 
@@ -325,9 +360,11 @@ syntax itself.
 - `openapi: true` renders every `::: openapi src="..."` block as an
   interactive Swagger UI widget; unset, the placeholder renders but stays
   inert and ships no extra JS/CSS.
-- `imageGallery: true` loads a small click-to-enlarge lightbox for every
-  `::: image-gallery` block; unset, the grid still renders, just without the
-  lightbox's JS.
+- `imageGallery: true` loads a small click-to-enlarge lightbox that makes
+  **every** content image zoomable (arrows cycle all zoomable images on the
+  page), not only `::: image-gallery` blocks. Opt an image out with
+  `class="no-zoom"` or `data-no-zoom`. Unset, the gallery grid still
+  renders, just without the lightbox's JS.
 
 ## `pageActions`
 
@@ -345,7 +382,7 @@ on.
 
 ## `mcp`
 
-`false` default. `true` writes `site/mcp-index.json`/`mcp-manifest.json`/
+`false` default (the `mcp` key above). `true` writes `site/mcp-index.json`/`mcp-manifest.json`/
 `mcp-nav.json` on every build, for bxSites Cloud's AI-agent MCP server -
 independent of `search`/`searchProvider`. See `bx-sites-ai-features`.
 
@@ -354,14 +391,25 @@ independent of `search`/`searchProvider`. See `bx-sites-ai-features`.
 Settings for `bxSites docbox` (a BoxLang/CFML API reference via DocBox) and
 `bxSites coldbox` (a ColdBox app's routes/handlers/models/modules read from
 disk) - `mappings`/`excludes`/`pagePathPrefix`/`tags` for the former,
-`appRoot`/`include`/`pagePathPrefix`/`tags` for the latter. Every key is
-optional; see `bx-sites-api-docs` for the full schema and generated output.
+`appRoot`/`include`/`pagePathPrefix`/`tags` for the latter, defaults as in
+the key block above. `docbox.projectTitle` titles the generated overview
+page (default: the site `name` plus `" API"`). Every key is optional; see
+`bx-sites-api-docs` for the full schema and generated output.
 
 ## `cloud`
 
 `cloud.siteId`/`cloud.apiUrl` - where `bxSites publish` ships the built
-site in bxSites Cloud. Both default to `""`; only `publish` needs this
-block. The API token never lives here - see `bx-sites-deployment`.
+site in bxSites Cloud. Both default to `""`; only `publish` needs them. The
+API token never lives here - see `bx-sites-deployment`. Also:
+
+- `cloud.apiUrl` is where `::: cloud` blocks fetch content at build time.
+- `cloud.contentBlocks` (`false`) - ships the client-side runtime that
+  live-refreshes `::: cloud` blocks. `true` with an empty `apiUrl` throws
+  `InvalidConfig`.
+- `cloud.contentBlocksOnError` - `"fail"` (default) or `"skip"`: what a
+  `::: cloud` block does when its build-time fetch fails.
+- `cloud.comments` (`false`) - gates `::: comments`; a bare block without it
+  fails the build. Comments load client-side, so no `apiUrl` fetch is needed.
 
 ## `versions`
 
@@ -374,6 +422,19 @@ line). A value that doesn't match any discovered version folder throws
 `BxSites.UnknownDefaultVersion` - it never falls back silently. Creating a
 version is still convention-only (`docs/versions/<name>/`, or
 `bxSites version:new`) - see `bx-sites-blog-versioning-i18n`.
+
+## Validation rules that bite
+
+Bad values throw `BxSites.InvalidConfig` (ConfigLoader.bx) and fail the
+build: `name` missing; `source: site`; `accentColor`/`accentColorDark` not a
+3- or 6-digit hex; `colorMode` not `light|dark|auto`; `tocPosition` not
+`top|sticky`; `pageMetaPosition`/`pageActionsPosition` not `top|bottom`;
+`analytics.provider` anything but `google`, or an `analytics.id` with
+characters beyond letters/digits/hyphens; an `i18n` locale `code` that isn't
+letters/digits/hyphens starting with a letter, or a duplicate code (the
+default locale counts); `assets.images.formats` entries other than
+`original|webp`; `blog.postsPerPage` not a positive whole number;
+`searchProvider.provider: algolia` without `appId`/`apiKey`/`indexName`.
 
 ## `i18n` / `blog` / `variables`
 

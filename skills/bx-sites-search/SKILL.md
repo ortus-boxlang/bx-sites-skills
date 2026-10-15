@@ -15,10 +15,11 @@ active.
 
 Fully static/client-side - the mkdocs default approach. At `build` time,
 `SearchIndexer` writes `site/search-index.json`: one entry per page with
-`title`, `url`, frontmatter `tags`, every heading's text, a truncated
-plain-text body copy, plus that page's `section` (its top-level ancestor's
-title) and `breadcrumb` (the full ancestor-title chain) used for result
-display. In the browser, `assets/search.js` fetches it once and builds a
+`title`, `url`, frontmatter `tags`, every heading's text, a plain-text body
+copy truncated to 400 characters, plus that page's `section` (its top-level
+ancestor's title) and `breadcrumb` (the ancestor-title chain) used for result
+display - so each entry is `{ title, url, headings, body, tags, section,
+breadcrumb }`. `hidden` pages are left out. In the browser, `assets/search.js` fetches it once and builds a
 [MiniSearch](https://lucaong.github.io/minisearch/) index (prefix +
 typo-tolerant fuzzy matching, both on by default; title weighted highest,
 then tags, then headings, then body). No server/database/external service.
@@ -33,7 +34,8 @@ without opening each one:
   (empty for a top-level page)
 - a **body snippet**, built from the matched region of the indexed body
 
-**Shortcuts**: `/` focuses the sidebar box; Cmd/Ctrl+K opens a
+**Shortcuts**: `/` focuses the sidebar box (which shows a `Ctrl K`/`Cmd K`
+hint badge); Cmd/Ctrl+K opens a
 command-palette overlay (reuses the same MiniSearch index, `local` only);
 `Escape` closes either (and blurs the sidebar box). In both, **Arrow
 Up/Down** move the active highlight through results, **Enter** opens the
@@ -46,6 +48,12 @@ bxSites search-index
 rebuilds just the index (`build` already runs this; useful standalone - see
 `bx-sites-build`). `bxSites search:query --query="..."` (see
 `bx-sites-content-quality`) sanity-checks what a real search would surface.
+
+**Index scoping**: a full `build` writes one `search-index.json` per doc tree -
+the main tree, each `versions/<v>/`, and each locale - so a versioned or
+localized site only searches the tree the reader is on. The standalone
+`search-index` verb covers only the main tree. `search: false` ships no index,
+no search box, and no MiniSearch/`search.js` at all.
 
 Everything a result shows - title, breadcrumb, snippet - comes from that
 build-time file, so a page that moved/re-nested keeps showing its old
@@ -71,7 +79,7 @@ your own Algolia Crawler config (register separately - bx-sites only wires
 up the client widget). Each theme renders an empty
 `#bxsites-search-algolia` container; `layout.bxm` loads `@docsearch/css`/
 `@docsearch/js` from jsDelivr and calls `docsearch({...})`. Gets Cmd+K for
-free from DocSearch itself.
+free from DocSearch itself. `insights`, when present, must be a boolean.
 
 ## `pagefind`
 
@@ -82,8 +90,10 @@ searchProvider:
   pagefind: { bin: pagefind, options: [] }
 ```
 
-Both keys optional (`bin` default `"pagefind"`, resolved against `PATH`;
-`options` extra raw CLI flags, e.g. `["--exclude-selectors", ".no-index"]`).
+Both keys optional (`bin` default `"pagefind"`, resolved against `PATH`, and
+non-empty if given; `options` an array of non-empty strings, extra raw CLI
+flags, e.g. `["--exclude-selectors", ".no-index"]`). Bootstrap's `layout.bxm`
+binds Cmd/Ctrl+K to focus the Pagefind input (PagefindUI doesn't itself).
 **The `pagefind` CLI must already be installed and on `PATH`** - bx-sites
 shells out to it, doesn't install it. A missing/failing binary fails the
 build loudly (`BxSites.PagefindFailed`) rather than degrading silently.
@@ -106,12 +116,19 @@ versions/locales). Writes into `site/pagefind/` - self-hosted, no CDN. No
 
 ## Building a fourth/custom provider
 
-`searchProvider.provider` accepts any string - `bxsites.yaml` only validates
-the three built-in providers and freely allows an arbitrary sub-block
-alongside it (`searchProvider.meilisearch: {...}`). There's no plugin hook
-for the search UI itself; the built-in themes render nothing for an
-unrecognized provider name, so wiring one up is a project-level theme
-override (see `bx-sites-themes`):
+`searchProvider.provider` accepts any non-empty string (it is the one required
+key of `searchProvider`) - `bxsites.yaml` only validates the `algolia` and
+`pagefind` sub-blocks and freely allows an arbitrary sub-block alongside it
+(`searchProvider.meilisearch: {...}`). There's no plugin hook for the search UI
+itself, so wiring one up is a project-level theme override (see
+`bx-sites-themes`). What a built-in theme already does for an unrecognized
+provider differs:
+
+- **`bootstrap`**'s `search.bxm` renders `<div id="bxsites-search-<provider>"
+  class="bxsites-search-<provider>">` for *any* provider that isn't `local`, so
+  the mount point already exists - don't add a duplicate id.
+- The **other 9 themes** branch only on `algolia`/`pagefind`/`local` in
+  `search.bxm` and render nothing for anything else.
 
 1. **Configure it** - any shape (unvalidated):
    ```yaml
@@ -123,15 +140,21 @@ override (see `bx-sites-themes`):
 2. **Eject a theme** - `bxSites theme:new --theme=bootstrap` copies the
    built-in theme into the project's `.theme/` folder, inside the resolved
    content root (project-theme-wins resolution - see `bx-sites-themes`).
-3. **Add the mount point** in `.theme/search.bxm` - it already branches on
-   `variables.searchProviderName` for `local`/`algolia`/`pagefind`; add a
-   branch: `<bx:if variables.searchProviderName eq 'meilisearch'><div
-   id="bxsites-search-meilisearch"></div></bx:if>`.
-4. **Load the client and wire it up** in `.theme/layout.bxm` - the existing
-   Algolia block is a `<bx:if variables.searchEnabled and
-   variables.searchProviderName eq 'algolia'>` guard; add the equivalent for
-   the new provider's own widget, reading its config back out of
-   `variables.siteConfig.searchProvider.meilisearch.*`.
+3. **Add the mount point** (non-bootstrap themes only) in
+   `.theme/search.bxm` - it branches on `variables.searchProviderName` for
+   `local`/`algolia`/`pagefind`; add a branch: `<bx:if variables.searchProviderName
+   eq 'meilisearch'><div id="bxsites-search-meilisearch"></div></bx:if>`.
+4. **Load the client and wire it up** - the existing Algolia/Pagefind blocks
+   are `<bx:if variables.searchEnabled and variables.searchProviderName eq
+   'algolia'>` guards; add the equivalent for the new provider's own widget,
+   reading its config back out of `variables.siteConfig.searchProvider.meilisearch.*`.
+   Mind *which shells carry search blocks*: an ejected bootstrap theme has
+   `layout.bxm` and `blog.bxm`, each with its own `searchProviderName` blocks
+   in the `<head>` (CSS, local-search scripts) and again near the end of
+   `<body>` (the Algolia/Pagefind widget init), plus `home.bxm` with the
+   `<head>` block only (no widget-init block). A provider wired only in
+   `layout.bxm` is missing on blog pages and the homepage; add it to each shell
+   that renders search. The other 9 themes have just `layout.bxm`.
 5. **Index the built site, if not crawler-hosted** - Algolia's own crawler
    populates out of band; a self-hosted engine like Meilisearch/Pagefind
    needs something to push documents after `build` writes `site/`. Use a
@@ -139,3 +162,10 @@ override (see `bx-sites-themes`):
    `bx-sites-plugins`) - `site/search-index.json` is still built even for
    an unrecognized provider (`SearchProviderRegistry.usesLocalIndex()`
    defaults `true`), so it's ready to use as the push payload.
+
+## Config validation
+
+`ConfigLoader` rejects with `BxSites.InvalidConfig`: `searchProvider` without a
+non-empty `provider`; `algolia` without non-empty `appId`/`apiKey`/`indexName`
+or with a non-boolean `insights`; `pagefind` that isn't an object, with an
+empty `bin`, or with `options` that isn't an array of non-empty strings.

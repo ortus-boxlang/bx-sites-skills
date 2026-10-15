@@ -2,7 +2,7 @@
 name: bx-sites-content-blocks
 metadata:
   version: "1.0"
-description: Write GitBook-style content blocks in bx-sites (ortus-boxlang/bx-sites) Markdown - expandables, card grids, columns, steppers, responsive image galleries, download/file cards, page breaks, buttons, embeds, page-link/link-preview cards, reusable AI prompt blocks, dated changelogs (updates), reusable content includes, reader-toggled conditional content, the OpenAPI/Swagger widget, a premium contact form, data-driven ::: for/::: if loops and conditionals, and a course index. All use the same `::: name ... :::` container syntax. Use this whenever a user wants to add a card, tabs-like grid, stepper, CTA button, embed, contact form, data-driven loop, or any `::: ... :::` block to a bx-sites page. For plain Markdown extensions (admonitions, tabs, code annotations, math, tables, icons), use bx-sites-markdown instead; for the underlying docs/data/*.yaml files and data classes, use bx-sites-variables-functions; for course manifests, use bx-sites-blog-versioning-i18n.
+description: Write GitBook-style content blocks in bx-sites (ortus-boxlang/bx-sites) Markdown - expandables, card grids, columns, steppers, responsive image galleries, download/file cards, page breaks, buttons, embeds, page-link/link-preview cards, reusable AI prompt blocks, dated changelogs (updates), reusable content includes, reader-toggled conditional content, the OpenAPI/Swagger widget, a premium contact form, data-driven ::: for/::: if loops and conditionals, a course index, bxSites Cloud content blocks (`::: cloud`), and a moderated comment thread (`::: comments`). All use the same `::: name ... :::` container syntax. Use this whenever a user wants to add a card, tabs-like grid, stepper, CTA button, embed, contact form, Cloud content block, comments thread, data-driven loop, or any `::: ... :::` block to a bx-sites page. For plain Markdown extensions (admonitions, tabs, code annotations, math, tables, icons), use bx-sites-markdown instead; for the underlying docs/data/*.yaml files and data classes, use bx-sites-variables-functions; for course manifests, use bx-sites-blog-versioning-i18n.
 ---
 
 # BxSites Content Blocks
@@ -14,6 +14,16 @@ can nest (an expandable containing a card grid, for instance). No
 `bxsites.yaml` config needed unless noted. Each maps to a GitBook block of
 the same name, which is why `bxSites migrate --from=gitbook` (see
 `bx-sites-getting-started`) can convert them directly.
+
+Good to know across all blocks:
+
+- A block with no body can self-close on one line:
+  `::: file src="a.pdf" :::` is the same as the two-line form.
+- An unknown `::: name` isn't an error - its content renders inside a
+  `bxsites-directive-unknown` wrapper.
+- Child-only blocks (`card`, `column`, `step`, `update`, `image`, and a
+  `button` nested in `buttons`) only make sense inside their parent
+  (`cards`, `columns`, `stepper`, `updates`, `image-gallery`, `buttons`).
 
 ## Expandable
 
@@ -31,7 +41,8 @@ Add `open="true"` to start it expanded.
 
 A grid of link cards. `title`, `icon`, `image`, `href` are all optional (no
 `href` renders a non-clickable card). `icon` resolves the same way
-frontmatter `icon` does (see `bx-sites-markdown`).
+frontmatter `icon` does (see `bx-sites-markdown`). If a card has both,
+`image` wins and `icon` is ignored.
 
 ```markdown
 ::: cards
@@ -48,7 +59,9 @@ Customize a built-in theme or write your own.
 
 Side-by-side layout. `::: column` accepts an optional `width` (CSS
 length/percentage, e.g. `"40%"`); columns with no explicit width share the
-row equally.
+row equally. Only `<number>` plus `%`, `px`, `rem` or `em` is honored
+(`"40%"`, `"20rem"`); anything else (`calc()`, `auto`, a bare number) is
+ignored.
 
 ```markdown
 ::: columns
@@ -122,14 +135,24 @@ numerically by `{order}`:
 - The **click-to-enlarge lightbox** needs `imageGallery: true` in
   `bxsites.yaml` (default `false`) - the same opt-in pattern `openapi`/
   `mermaid`/`math` already use, and wired into all ten themes. Unset, the
-  grid still renders, just without the lightbox JS. Keyboard: `Escape`
-  closes, `ArrowLeft`/`ArrowRight` move within the same gallery only (it
-  wraps, and hides prev/next when a gallery holds a single image).
+  grid still renders, just without the lightbox JS.
+- With `imageGallery: true`, **every content image** on the page is
+  click-to-enlarge, not only `::: image-gallery` items. Keyboard: `Escape`
+  closes, `ArrowLeft`/`ArrowRight` cycle through ALL zoomable images on the
+  page in document order (it wraps, and hides prev/next when only one image
+  is zoomable).
+- Opt out per image with `class="no-zoom"` or `data-no-zoom`. Images under
+  120px wide, and images inside `a[href]`, `button`, `nav`, `header`,
+  `footer` or `.bxsites-card`, are skipped automatically. An image outside
+  `<main>`/`<article>` can opt in with `data-bxsites-lightbox`.
 
 ## File
 
-A download card for a PDF, video, or any other asset. `src` resolves
-relative to `docs/assets/`.
+A download card for a PDF, video, or any other asset. `src` is resolved
+against the site root (the content root, with `basePath` prefixed), not
+against `docs/assets/` - so the `assets/` segment must be written out
+(`assets/spec.pdf` for `docs/assets/spec.pdf`). An absolute URL or a
+`/`-rooted path is left untouched.
 
 ```markdown
 ::: file src="assets/spec.pdf" title="API Specification"
@@ -170,7 +193,8 @@ Optional attributes:
 - `size="small"`, `"medium"` (default), `"large"`
 - `icon="..."` - same resolution as a card's icon
 - `target="_blank"` - opens in a new tab (`rel="noopener noreferrer"` added automatically)
-- `disabled="true"` - inert, unclickable, no `href` needed
+- `disabled="true"` - inert, unclickable, no `href` needed (a button with
+  no `href` at all also renders inert)
 
 ## Embed
 
@@ -224,7 +248,8 @@ written for an end user rather than a developer.
 `description` (one-line summary) and `icon` (defaults to a sparkle glyph)
 are optional. `expanded="preview"` clamps a long prompt to a fade-out
 preview until clicked; `expanded="hidden"` starts fully collapsed; omit (or
-`"full"`) to always show it in full. There is no "Open in AI providers"
+`"full"`) to always show it in full. `collapsed` is an alias of `hidden`
+and `partial` an alias of `preview`. There is no "Open in AI providers"
 menu - bx-sites never talks to a third-party AI provider.
 
 ## Updates (changelog)
@@ -266,6 +291,9 @@ never built as their own page and never appear in nav/search/sitemap/tags.
   the main tree's `docs/includes/`.
 - An included file can itself include another; a circular chain throws
   `BxSites.CircularInclude` at build time.
+- The include line must stand alone, with no closing `:::`. Unlike other
+  body-less blocks, `::: include src="x" :::` on one line is NOT recognized
+  and is left as literal text.
 
 ## Conditional content
 
@@ -302,8 +330,8 @@ The Pro plan adds AI-assisted search and unlimited team seats.
 Interactive Swagger UI widget for an OpenAPI/Swagger spec (JSON or YAML),
 GitBook's OpenAPI block equivalent. Requires `bxsites.yaml`'s `openapi: true`
 (see `bx-sites-configuration`; unset, the placeholder renders but stays
-inert and ships no extra JS/CSS). `src` resolves relative to `docs/assets/`,
-same as `::: file`.
+inert and ships no extra JS/CSS). `src` resolves the same way as
+`::: file` (site root plus `basePath`, so write the `assets/` segment).
 
 ```markdown
 ::: openapi src="assets/openapi/example.yaml" title="Bookshelf API"
@@ -351,7 +379,7 @@ rather than a page reload:
   configured server-side by the account admin).
 - `fields` - required; comma-separated `name:type` pairs. Add a trailing
   `*` right after a field's name (before its `:`) to mark it required, e.g.
-  `email*:email`. Supported types: `text`, `email`, `textarea`; anything
+  `email*:email`. Supported types: `text`, `email`, `textarea`, `number`; anything
   else falls back to a plain `text` input. A field's label is derived from
   its name (`full-name` -> "Full Name").
 - `submitLabel` - the submit button's text; defaults to `"Send"`.
@@ -384,6 +412,10 @@ an array, key + value for a struct, identical syntax either way:
 :::
 ```
 
+The path may also end in a method call on a data class,
+e.g. `::: for plan, i in data.pricing.getPlans()` or
+`::: if data.pricing.hasDiscount("pro")`.
+
 `::: if <dotted.path>` renders only when the resolved value is truthy (an
 empty array/struct/string, `0`, `false` all count as falsy). Chain any
 number of `::: elseif <dotted.path>` and a trailing bare `::: else` for real
@@ -409,10 +441,13 @@ magic function instead - see `bx-sites-variables-functions`. Full picture on
 that skill's Data Files section.
 
 `page` and `data` are **reserved loop-variable names** - `::: for page, i in
-...` is an error (they'd shadow the real context variables); pick any other
-name. A `::: for` whose path resolves to something that's neither an array
-nor a struct fails with `BxSites.InvalidForTarget`, and an unresolvable
-dotted path in either directive is `BxSites.UnknownVariable`.
+...` doesn't throw, it renders an inline `<div class="bxsites-directive-invalid">`
+in place of the loop (they'd shadow the real context variables); pick any
+other name. A malformed `::: for` spec, a `::: if` with no path, and a
+`::: else` given a condition render that same invalid marker. Only two
+things fail the build: a `::: for` whose path resolves to something that's
+neither an array nor a struct (`BxSites.InvalidForTarget`), and an
+unresolvable dotted path in either directive (`BxSites.UnknownVariable`).
 
 ## Course index
 
@@ -428,3 +463,43 @@ Takes only a bare `id` - no `href`/body of its own; the lessons and their
 order come entirely from the manifest. See the `bx-sites-blog-versioning-i18n`
 skill's Courses section for the manifest format, scoped lesson-to-lesson
 navigation, and reader progress tracking.
+
+## Cloud content block
+
+`::: cloud slug="press/release1"` bakes a published bxSites Cloud content
+block into the page at build time (sanitized HTML, so it reads with no JS and
+is real SEO text). It is the one directive that makes an outbound HTTP
+request during a build.
+
+```markdown
+::: cloud slug="press/release1"
+:::
+```
+
+- Needs a bxSites Cloud account with Content Blocks, plus in `bxsites.yaml`
+  `cloud.contentBlocks: true` and `cloud.apiUrl` (your Cloud instance), and
+  the `BXSITES_CLOUD_TOKEN` environment variable. Without
+  `cloud.contentBlocks`/`cloud.apiUrl` the build fails with
+  `BxSites.CloudContentNotConfigured`; with it on but no token, with
+  `BxSites.MissingCloudToken`.
+- `cloud.contentBlocksOnError`: `"fail"` (default, throws
+  `BxSites.CloudFetchFailed`) or `"skip"` (warns and renders an empty
+  placeholder). A draft or expired block counts as a failed fetch.
+- `cloud-content-init.js` (shipped when `cloud.contentBlocks` is on) swaps in
+  a fresher version on page load if one exists.
+
+## Comments
+
+`::: comments` (or `::: comments id="..."`) mounts a moderated visitor
+comment thread. Nothing is fetched at build time; `comments-init.js` loads
+the thread client-side on every page view.
+
+```markdown
+::: comments
+:::
+```
+
+- Needs bxSites Cloud Comments and `cloud.comments: true` in `bxsites.yaml`,
+  otherwise the build fails with `BxSites.CommentsNotConfigured`.
+- The thread id defaults to the page's `urlPath` (one thread per page); set
+  `id` to share a thread across pages or to host two on one page.
