@@ -44,6 +44,21 @@ box install bx-sites          # CommandBox
 
 Either installer drops a `bxSites` script on `PATH`.
 
+### Tab completion
+
+The module ships completion scripts for bash, fish and PowerShell in its
+`completions/` folder. They complete verbs (`page:new` or `page new`), flags and
+fixed-value flags (`--theme=`, `--target=`, `--from=`).
+
+- **bash**: automatic with `install-bx-module bx-sites` (it reads
+  `boxlang.completions` from the module's `box.json`). Otherwise add
+  `source <module folder>/completions/bxSites.bash` to `~/.bashrc`.
+- **fish**: `cp <module folder>/completions/bxSites.fish ~/.config/fish/completions/`
+- **PowerShell**: add `. <module folder>/completions/bxSites.ps1` to `$PROFILE`.
+
+The scripts are generated from the verb table; contributors regenerate them
+with `boxlang tools/generate-completions.bxs` (a spec fails when they are stale).
+
 ## Scaffold a new project
 
 ```bash

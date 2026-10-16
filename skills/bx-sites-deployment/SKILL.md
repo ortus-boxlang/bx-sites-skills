@@ -295,7 +295,7 @@ two branches own different parts of one `gh-pages` site:
 Jobs:
 
 1. `build` - a matrix over the 10 built-in themes. Each job checks out,
-   runs `ortus-boxlang/setup-boxlang@1.4.0` (`with-commandbox: true`,
+   runs `ortus-boxlang/setup-boxlang@1.6.0` (`with-commandbox: true`,
    modules `bx-esapi bx-yaml bx-toml bx-markdown bx-image`), links the repo
    into `BOXLANG_HOME/modules`, rewrites `theme.name` and `baseURL`
    (`.../theme/<name>/`) for every non-`bootstrap` theme, runs

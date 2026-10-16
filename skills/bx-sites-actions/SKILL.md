@@ -34,12 +34,11 @@ can originate in `core/`.
 ## Where failures show up
 
 **`tests.yml`** (reached via `cron.yml`, `pr.yml`, `snapshot.yml`):
-- Matrix: `ubuntu-latest` (required, job `Tests bx-sites`) and `windows-latest`
-  (`experimental: true` + `continue-on-error`, job `Tests bx-sites (windows-latest)`).
-  A red Windows job does not fail the run, but read it - it covers path
-  handling (backslashes, drive letters).
+- Matrix: `ubuntu-latest` (job `Tests bx-sites`) and `windows-latest` (job
+  `Tests bx-sites (windows-latest)`). Both are required; a red Windows job
+  fails the run. It covers path handling (backslashes, drive letters).
 - CI installs `bx-esapi bx-yaml bx-toml bx-markdown bx-image bx-docbox` with
-  `setup-boxlang@1.4.0` (`with-commandbox`). A missing module shows up as a
+  `setup-boxlang@1.6.0` (`with-commandbox`). A missing module shows up as a
   spec or build error, not a setup error.
 - Step **Run Tests**: TestBox does not return a failing exit code, so this
   step sums `tests`/`failures`/`errors` across `tests/results/*.xml` and fails
@@ -63,7 +62,7 @@ on `development`; otherwise it checks out `development`, runs `box bump
 snapshot failure is usually in the S3 or ForgeBox step, not the tests, since
 `snapshot.yml` already ran them.
 
-**`docbox.yml`**: `setup-boxlang@1.4.0` with `bx-docbox`; failures are in
+**`docbox.yml`**: `setup-boxlang@1.6.0` with `bx-docbox`; failures are in
 "Generate Documentation" (`./runDocs.sh`) or the S3 upload.
 
 **`pages.yml`** ("Publish Docs"): `main` deploys the site root, `development`
