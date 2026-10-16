@@ -172,8 +172,9 @@ control** (the site is still fully reachable by URL - see
 
 - `theme.name` - one of the ten built-in themes (`bootstrap` default,
   `material`, `tailwind`, `docsy`, `slate`, `docusaurus`, `justthedocs`,
-  `vuepress`, `gitbook`, `notion`) or a custom theme's own name - see
-  `bx-sites-themes`
+  `vuepress`, `gitbook`, `notion`) or an installed/custom theme's name - see
+  `bx-sites-themes`. Must be a slug (lowercase letters, digits, hyphens);
+  per-theme changes live in `.overrides/<theme.name>/`
 - `theme.logo`/`theme.favicon` - path (resolved against `docs/assets/`,
   prefixed with `baseURL`) or absolute URL
 - `theme.options.colorMode` - `"auto"` (default, follows OS)/`"light"`/`"dark"`
@@ -206,6 +207,14 @@ control** (the site is still fully reachable by URL - see
   line alongside a nested sidebar nav section; `false` turns it off.
   `navAccentLineColor` (3- or 6-digit hex) overrides its color, falling back
   to `accentColor`/`accentColorDark`, then the theme's native accent
+
+## `layouts`
+
+Implicit layouts: `[{ layout: landing, match: ["marketing/**", "pricing.md"] }]`
+assigns a layout to every page whose content-root-relative path matches a glob
+(first rule wins; a page's own `layout:` frontmatter wins over a rule). `layout`
+is a bare template name; `match` is a glob or a list. Default `[]`. See
+`bx-sites-themes` ("Implicit layouts").
 
 ## `search` / `searchProvider`
 
@@ -434,7 +443,10 @@ characters beyond letters/digits/hyphens; an `i18n` locale `code` that isn't
 letters/digits/hyphens starting with a letter, or a duplicate code (the
 default locale counts); `assets.images.formats` entries other than
 `original|webp`; `blog.postsPerPage` not a positive whole number;
-`searchProvider.provider: algolia` without `appId`/`apiKey`/`indexName`.
+`searchProvider.provider: algolia` without `appId`/`apiKey`/`indexName`;
+a `theme.name` that is not a slug; a `layouts` that is not an array of
+`{ layout, match }` entries, a `layout` that is not a bare template name, or an
+empty `match`.
 
 ## `i18n` / `blog` / `variables`
 

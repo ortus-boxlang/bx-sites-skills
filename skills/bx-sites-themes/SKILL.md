@@ -123,6 +123,10 @@ A theme is a folder with:
   post, rendered under the theme's normal `layout.bxm`. Falls back to
   `page.bxm` when a theme doesn't have it.
 - **`assets/`** (optional) - theme CSS/JS, copied to `site/assets/theme/`.
+- **`slots/<name>.bxm`** (optional) - default content for a slot the layout
+  renders with `renderSlot( "<name>" )` - see "Slots" below.
+- **`theme.json`** (optional) - manifest: `{ "slug", "name", "slots": [...] }` -
+  see "Theme manifest" below.
 - **`<name>.bxm`** (optional) - any extra template a page can opt into by
   frontmatter `layout: <name>` - `home.bxm` is the built-in example (see
   "Multiple layouts per page" below). Not enforced; a name no theme file
@@ -218,8 +222,8 @@ layout: press-release
 ```
 
 `layout: press-release` resolves **both** slots: this one page renders
-through `.theme/press-release.bxm` (or the active built-in theme's, if it has
-one) as its outer shell *and* as its body. A `layout:` naming a file the
+through `.overrides/<theme>/press-release.bxm` (or the active theme's own
+`press-release.bxm`, if it has one) as its outer shell *and* as its body. A `layout:` naming a file the
 active theme doesn't have falls back to `layout.bxm`/`page.bxm` rather than
 failing the build, so switching themes never breaks a page that named one
 theme's own custom layout.
@@ -236,15 +240,14 @@ layout: home
 ---
 ```
 
-That's how a marketing homepage works: `bootstrap` ships a `home.bxm` that
-is **not** a derivative of `layout.bxm` - no sidebar, no TOC rail, a
-horizontal marketing nav instead of the docs hamburger - and it never
-includes `#variables.bodyFile#`, so the whole page is hardcoded in the
-template and that page's own Markdown body goes unused while it renders.
-Drop `layout: home` and the page falls straight back to the normal
-`layout.bxm`/`page.bxm` rendering, body included. `home.bxm` exists **only in
-`bootstrap`**; in the other 9 themes `layout: home` falls back to
-`layout.bxm`/`page.bxm`.
+That's how a marketing homepage works: a `home.bxm` that is **not** a
+derivative of `layout.bxm` - no sidebar, no TOC rail, a horizontal marketing
+nav - and never includes `#variables.bodyFile#`, so the whole page is
+hardcoded in the template and that page's own Markdown body goes unused. No
+built-in theme ships a `home.bxm` any more: bx-sites' own homepage lives in
+its own `docs/.overrides/bootstrap/home.bxm` (see "Project overrides"). A
+`layout: home` with no `home.bxm` anywhere falls straight back to the normal
+`layout.bxm`/`page.bxm` rendering, body included.
 
 So a frontmatter `layout:` is all-or-nothing across both slots: the named
 template has to be a complete outer shell that renders everything itself,
@@ -254,8 +257,7 @@ a theme ships per content type - `blog-page.bxm` for a post, rendered under
 the normal `layout.bxm`. For a custom body inside the usual shell, branch
 inside `page.bxm` on `variables.bodyFile` instead (below).
 
-`bootstrap` ships `blog.bxm`/`blog-page.bxm` (and `home.bxm`) as working
-examples to copy; the other built-in themes don't yet, and fall back to
+`bootstrap` ships `blog.bxm`/`blog-page.bxm` as working examples to copy; the other built-in themes don't yet, and fall back to
 `layout.bxm`/`page.bxm` for blog content the same way any incomplete
 `.theme/` override would.
 
@@ -284,6 +286,81 @@ Useful for a body class hook, or branching without a separate template:
 	<!-- blog-post-only chrome -->
 </bx:if>
 ```
+
+## Project overrides (`.overrides/<theme>/`)
+
+To change a few things and keep the rest of a theme (and its future updates),
+put files in `<contentRoot>/.overrides/<theme>/` instead of ejecting a whole
+`.theme/`. `<theme>` is the slug in `theme.name`.
+
+```text
+docs/.overrides/bootstrap/
+├── home.bxm            a layout (`layout: home`)
+├── page.bxm            replaces the theme's page.bxm
+├── assets/logo.svg     replaces/adds one theme asset
+└── slots/footer.bxm    fills the `footer` slot
+```
+
+- Each file is laid over the theme: same name replaces, anything else is
+  added. The theme itself is never modified; the merge is written to
+  `.cache/theme/<theme>/` (removed by `clean`) and that folder renders, so
+  `themeAssetUrl()`, includes and fingerprinting behave as for a plain theme.
+- Overrides are per theme: switching `theme.name` switches them with it.
+- `theme.name` must be a slug (lowercase letters, digits, hyphens - what
+  `slugify()` returns); anything else fails with `BxSites.InvalidConfig` and
+  a suggestion.
+- Order: a complete flat `.theme/` wins outright, then `.overrides/<theme>/`,
+  then installed `.themes/<theme>/`, then the built-in theme.
+- `.overrides` is a dot folder, so it is never published as pages.
+- `bxSites layout:new --name=landing [--from=layout] [--theme=<slug>]`
+  copies a theme template (default `layout.bxm`) into the right folder;
+  fails with `BxSites.LayoutExists` rather than overwrite.
+
+### Slots
+
+A slot is a named hole in a theme's `layout.bxm`, rendered with
+`#renderSlot( "footer" )#`. Fill it with `slots/<name>.bxm` in the overrides
+folder; the file replaces the theme's default (`slots/<name>.bxm` inside the
+theme, possibly absent = empty). Slot files are templates: wrap markup in
+`<bx:output>` and they see `page`, `nav`, `siteConfig`, `basePath`, `data`.
+
+Every built-in theme exposes `head-extra` (before `</head>`),
+`announcement-bar` (right after `<body>`), `header` (the top bar - default is
+the theme's own), `footer` (default is the theme's footer, shown when
+`footer: true`) and `sidebar-bottom` (below the nav tree). A slot name the
+theme does not expose prints a build warning and is ignored (never an error).
+
+### Theme manifest (`theme.json`)
+
+Optional, at the root of a theme: `{ "slug": "bootstrap", "name": "Bootstrap",
+"slots": ["head-extra", "announcement-bar", "header", "footer",
+"sidebar-bottom"] }`. `slug` must equal the folder name (`BxSites.InvalidTheme`
+otherwise); slot names are lowercase letters, digits, hyphens. With a manifest,
+a `renderSlot()` of an unlisted name and an override slot the theme does not
+expose both warn. Without one a theme works as before. All 10 built-in themes
+ship one.
+
+### Implicit layouts
+
+`bxsites.yaml` can assign a layout to pages by path instead of repeating
+`layout:` in frontmatter:
+
+```yaml
+layouts:
+  - layout: landing
+    match: ["marketing/**", "pricing.md"]
+  - layout: post
+    match: "blog/posts/**"
+```
+
+Rules are tried in order, first match wins, and a page's own `layout:`
+frontmatter always beats a rule. `layout` is a bare template name resolved like
+a frontmatter `layout:`. Globs match the content-root-relative path with `/`,
+case-sensitively: `*` inside one segment, `**` across segments (`**/` also
+matches zero folders), `?` one character, trailing `/` = everything under it.
+Applies to docs pages and blog posts (for a post the name selects the body
+template, as with frontmatter); generated pages keep their own templates. A bad
+shape fails with `BxSites.InvalidConfig`.
 
 ## Customizing colors without a full override
 
@@ -351,7 +428,8 @@ automatically, no config change needed - it takes precedence over
 `theme.name` entirely. **All-or-nothing**: once a project `.theme/` exists it
 needs its own `layout.bxm` + `page.bxm` even for a CSS-only change (missing
 either fails with `BxSites.InvalidTheme`) - for CSS-only, prefer `extraCss`
-above instead.
+above instead. To change just a few files and keep the rest of the theme, use
+`.overrides/<theme>/` (below) instead of ejecting it.
 
 ## Writing a theme from scratch
 
