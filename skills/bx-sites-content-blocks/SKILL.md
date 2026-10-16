@@ -499,7 +499,11 @@ the thread client-side on every page view.
 :::
 ```
 
-- Needs bxSites Cloud Comments and `cloud.comments: true` in `bxsites.yaml`,
-  otherwise the build fails with `BxSites.CommentsNotConfigured`.
+- Needs bxSites Cloud Comments and `cloud.comments: true` in `bxsites.yaml`.
+  Without `cloud.comments`, the build does not fail: the block renders an
+  inert, empty `bxsites-comments--disabled` container, no `comments-init.js`
+  is shipped, and the build prints one warning naming the first page
+  affected. (`::: cloud` is different: it still fails the build without
+  `cloud.contentBlocks`, because it has to fetch real content.)
 - The thread id defaults to the page's `urlPath` (one thread per page); set
   `id` to share a thread across pages or to host two on one page.
