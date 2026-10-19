@@ -1,6 +1,6 @@
 # bx-sites-skills
 
-A collection of skills for AI coding agents following the Agent Skills format, focused on `ortus-boxlang/bx-sites` - the BoxLang static site generator. Covers creating and authoring content, configuring/theming/publishing sites, and operating the project's own CI.
+A collection of skills for AI coding agents following the Agent Skills format, focused on `ortus-boxlang/bx-sites` - the AI-first static site generator, hosted anywhere or on bxSites Cloud. Covers creating and authoring content, configuring/theming/publishing sites, and operating the project's own CI.
 
 ## Install
 
