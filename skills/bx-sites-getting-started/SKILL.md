@@ -7,10 +7,12 @@ description: Install bx-sites (ortus-boxlang/bx-sites) and scaffold a new site, 
 
 # BxSites Getting Started
 
-BxSites (`ortus-boxlang/bx-sites`) is a BoxLang-based static site generator in
+BxSites (`ortus-boxlang/bx-sites`) is an AI-first static site generator in
 the spirit of mkdocs/GitBook: point it at a `docs/` (or `src/`) folder of
-Markdown and it builds a themed, searchable static site - not just for docs,
-also blogs/marketing sites/knowledge bases.
+Markdown and it builds a themed, searchable static site - docs, blogs,
+marketing sites or knowledge bases. Every build is AI-ready (`llms.txt`, an
+optional MCP manifest), and a site can be hosted anywhere or published to
+bxSites Cloud. It runs on BoxLang.
 
 Every command runs as `bxSites <verb> [options]` (or
 `boxlang bxSites <verb> [options]` where the `PATH` shim isn't installed -
