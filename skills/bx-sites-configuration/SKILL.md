@@ -325,7 +325,24 @@ Google Analytics only currently: `provider: "google"` + `id: "G-ABC123"`
 `ogImage` - default social-card image (path resolved like `theme.logo`, or
 absolute URL); a page's own frontmatter `ogImage` always wins for that page.
 `generateOgImages: true` renders a real 1200x630 PNG per page lacking its
-own `ogImage` (pure `java.awt`, no headless browser/network needed).
+own `ogImage`. Drawn with the `bx-image` module (1.13.0 or later), so no
+headless browser or network is needed. Each card has the site logo and name, a
+section chip, the page title, its description and URL, and an accent gradient
+bar; accent colors come from `theme.options.accentColor`/`accentColorDark`.
+
+`ogCard` (optional object, every key optional) tunes the cards:
+`background`, `accent`, `accentEnd`, `text`, `muted` (`#RGB`/`#RRGGBB`),
+`logo` (PNG/JPG/GIF; SVG cannot be drawn, so the card falls back to the site
+name), `font` (a TTF/OTF in the source folder or an absolute path), and the
+booleans `description`, `url` and `section` (all default `true`).
+
+```yaml
+generateOgImages: true
+ogCard:
+  background: "#06141a"
+  logo: assets/og-logo.png
+  description: true
+```
 
 ## `extraCss` / `extraJs`
 
