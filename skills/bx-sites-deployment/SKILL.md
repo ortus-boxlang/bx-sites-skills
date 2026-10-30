@@ -2,7 +2,7 @@
 name: bx-sites-deployment
 metadata:
   version: "1.0"
-description: Deploy, package, or publish a built bx-sites (ortus-boxlang/bx-sites) site - deployments/ entries (.yaml/.yml/.toml/.json) for S3-compatible, Azure, GCS, Firebase, FTP/SFTP, rsync, Netlify, Vercel, Cloudflare Pages, local, and GitHub Pages targets, secrets-in-env-vars conventions, bxSites package, bxSites publish to bxSites Cloud (the cloud/siteId/apiUrl config key and BXSITES_CLOUD_TOKEN), the GitHub Actions Pages publishing workflow (main at the site root, development at /next/), and restricting who can reach a deployed site. Use this whenever a user wants to ship a built bx-sites site somewhere, publish it to bxSites Cloud, set up CI/CD publishing, or gate access to a deployed site.
+description: Deploy, package, or publish a built bx-sites (ortus-boxlang/bx-sites) site - deployments/ entries (.yaml/.yml/.toml/.json) for S3-compatible, Azure, GCS, Firebase, FTP/SFTP, rsync, Cloudflare Pages, local, and GitHub Pages targets, secrets-in-env-vars conventions, bxSites package, bxSites publish to bxSites Cloud (the cloud/siteId/apiUrl config key and BXSITES_CLOUD_TOKEN), the GitHub Actions Pages publishing workflow (main at the site root, development at /next/), and restricting who can reach a deployed site. Use this whenever a user wants to ship a built bx-sites site somewhere, publish it to bxSites Cloud, set up CI/CD publishing, or gate access to a deployed site.
 ---
 
 # BxSites Deployment Reference
@@ -45,7 +45,7 @@ name is the file name up to the first `.` (`production.yaml` is
 `production`); dotfiles are ignored. The same name in two formats
 (`production.yaml` + `production.json`) is a `Duplicate deploy entry name`
 error. Each entry needs a `target`, one of: `local`, `github-pages`, `s3`,
-`ftp`, `sftp`, `rsync`, `azure`, `gcs`, `firebase`, `netlify`, `vercel`,
+`ftp`, `sftp`, `rsync`, `azure`, `gcs`, `firebase`,
 `cloudflare-pages`. Any error in `deployments/` (unknown target, missing
 required field, duplicate name, unreadable file) fails the run **before**
 building.
@@ -196,25 +196,6 @@ first contact with a new host is auto-trusted and later ones are verified. A
 `remotePath` of `/`, `~`, `.` (or empty) is refused with `InvalidDeployConfig`
 - point it at the site's own folder.
 
-### `netlify`
-
-```yaml title="deployments/production.yaml"
-target: netlify
-siteId: my-site-id-or-name.netlify.app
-authTokenEnvVar: NETLIFY_AUTH_TOKEN
-```
-
-### `vercel`
-
-```yaml title="deployments/production.yaml"
-target: vercel
-projectId: my-project
-authTokenEnvVar: VERCEL_TOKEN
-```
-
-Optional `teamId` scopes the deploy to a team; `orgId` is accepted as a
-fallback for it.
-
 ### `cloudflare-pages`
 
 ```yaml title="deployments/production.yaml"
@@ -335,8 +316,6 @@ whichever host serves them:
 
 - **Cloudflare Pages/Access** - a Cloudflare Access policy (email allowlist,
   SSO, one-time PIN), no application code.
-- **Netlify** - built-in password protection per site/deploy, from site
-  settings alone.
 - **A tiny reverse-proxy** (any host) - HTTP Basic Auth in front of the
   static files - keeps out search engines and casual visitors, not real
   per-user identity.

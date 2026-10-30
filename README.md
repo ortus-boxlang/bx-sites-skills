@@ -36,7 +36,7 @@ files) so it installs correctly via `npx skills add` and the ColdBox/BoxLang
 | `bx-sites-themes` | Choosing, customizing, overriding, installing, or writing a theme; multi-layout themes (`layout:` frontmatter, `blog.bxm`/`blog-page.bxm`, marketing `home.bxm`); the `ThemeProvider` contract. |
 | `bx-sites-search` | Search providers - local (MiniSearch, enriched results with breadcrumbs/snippets, keyboard nav), Algolia DocSearch, Pagefind, and wiring up a custom provider. |
 | `bx-sites-plugins` | Writing/installing a BxSites plugin (build-lifecycle hooks) or a CLI provider (new `bxSites` verbs). |
-| `bx-sites-deployment` | Deploy targets (S3/Azure/GCS/Firebase/FTP/SFTP/rsync/Netlify/Vercel/Cloudflare Pages/GitHub Pages) configured in `deployments/*` (YAML, TOML or JSON), `package`, `publish` to bxSites Cloud, and the GitHub Actions publishing workflow. |
+| `bx-sites-deployment` | Deploy targets (S3/Azure/GCS/Firebase/FTP/SFTP/rsync/Cloudflare Pages/GitHub Pages) configured in `deployments/*` (YAML, TOML or JSON), `package`, `publish` to bxSites Cloud, and the GitHub Actions publishing workflow. |
 | `bx-sites-actions` | Operate and troubleshoot bx-sites' own GitHub Actions workflows (tests, snapshot, release, docs, pages). |
 | `bx-sites-api-docs` | Generate an API reference from real source with `bxSites docbox` (BoxLang/CFML via DocBox) and `bxSites coldbox` (a ColdBox app's routes/handlers/models/modules). |
 | `bx-sites-java-integration` | Add a bx-sites site to a Java/Spring Boot project via the Gradle or Maven plugin, plus their Javadoc/OpenAPI/controller-scan doc generators. |
